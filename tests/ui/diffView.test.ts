@@ -8,8 +8,8 @@ const hunks = [
     patchId: "hash_1",
     header: "@@ -1,2 +1,2 @@",
     lines: [
-      { type: "removed", content: "-const a=1;" },
-      { type: "added", content: "+const a = 1;" }
+      { type: "removed" as const, content: "-const a=1;" },
+      { type: "added" as const, content: "+const a = 1;" }
     ]
   }
 ];

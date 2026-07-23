@@ -43,7 +43,7 @@ export async function createReview(input: {
   owner: string;
   repo: string;
   title: string;
-}): Promise<number> {
+}): Promise<number | undefined> {
   return db.reviews.add({
     ...input,
     createdAt: Date.now()

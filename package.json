@@ -13,6 +13,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@pinia/nuxt": "^0.11.2",
     "dexie": "^4.4.4",
     "nuxt": "^3.19.0",
     "pinia": "^3.0.3",
@@ -27,6 +28,7 @@
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "vue-tsc": "^3.3.8"
   }
 }

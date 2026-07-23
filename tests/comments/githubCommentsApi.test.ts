@@ -86,4 +86,32 @@ describe("github comments api", () => {
     expect(url).toContain("/pulls/12/reviews");
     expect(init.method).toBe("POST");
   });
+
+  it("throws when pull request comments endpoint returns non-OK status", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
+
+    await expect(
+      fetchPullRequestComments(
+        { owner: "acme", repo: "tool", pullNumber: 5 },
+        fetchMock as unknown as typeof fetch
+      )
+    ).rejects.toThrow("GitHub API request failed with status 500");
+  });
+
+  it("throws when review submission fails", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 422 }));
+
+    await expect(
+      submitPullRequestReview(
+        {
+          owner: "acme",
+          repo: "tool",
+          pullNumber: 12,
+          event: "REQUEST_CHANGES",
+          body: "Needs fixes"
+        },
+        fetchMock as unknown as typeof fetch
+      )
+    ).rejects.toThrow("GitHub review submission failed with status 422");
+  });
 });

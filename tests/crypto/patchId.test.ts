@@ -7,16 +7,16 @@ describe("patch-id", () => {
     const hunkA = {
       header: "@@ -10,3 +10,3 @@",
       lines: [
-        { type: "removed", content: "-return a+b;" },
-        { type: "added", content: "+return a + b;" }
+        { type: "removed" as const, content: "-return a+b;" },
+        { type: "added" as const, content: "+return a + b;" }
       ]
     };
 
     const hunkB = {
       header: "@@ -120,3 +120,3 @@",
       lines: [
-        { type: "removed", content: "-return a+b;" },
-        { type: "added", content: "+return a + b;" }
+        { type: "removed" as const, content: "-return a+b;" },
+        { type: "added" as const, content: "+return a + b;" }
       ]
     };
 
@@ -27,16 +27,16 @@ describe("patch-id", () => {
     const hunkA = {
       header: "@@ -1,2 +1,2 @@",
       lines: [
-        { type: "removed", content: "-return sum(a, b);" },
-        { type: "added", content: "+return sum(a, b) + 1;" }
+        { type: "removed" as const, content: "-return sum(a, b);" },
+        { type: "added" as const, content: "+return sum(a, b) + 1;" }
       ]
     };
 
     const hunkB = {
       header: "@@ -1,2 +1,2 @@",
       lines: [
-        { type: "removed", content: "-return sum(a, b);" },
-        { type: "added", content: "+return sum(a, b);" }
+        { type: "removed" as const, content: "-return sum(a, b);" },
+        { type: "added" as const, content: "+return sum(a, b);" }
       ]
     };
 
@@ -45,10 +45,10 @@ describe("patch-id", () => {
 
   it("normalizes trailing spaces and empty lines", () => {
     const normalized = normalizePatchLines([
-      { type: "removed", content: "-const x = 'a';   " },
-      { type: "added", content: "+const x = \"a\";   " },
-      { type: "context", content: " " },
-      { type: "context", content: "" }
+      { type: "removed" as const, content: "-const x = 'a';   " },
+      { type: "added" as const, content: "+const x = \"a\";   " },
+      { type: "context" as const, content: " " },
+      { type: "context" as const, content: "" }
     ]);
 
     expect(normalized).toEqual([

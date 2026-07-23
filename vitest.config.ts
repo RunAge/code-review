@@ -13,6 +13,16 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
+      include: [
+        "src/comments/**/*.ts",
+        "src/db/**/*.ts",
+        "src/engine/**/*.ts",
+        "src/filters/**/*.ts",
+        "src/stores/**/*.ts",
+        "src/utils/**/*.ts",
+        "src/workers/diff/parser.ts",
+        "src/workers/diff/patchId.ts"
+      ],
       thresholds: {
         lines: 85,
         functions: 85,

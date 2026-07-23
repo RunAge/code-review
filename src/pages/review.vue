@@ -1,6 +1,6 @@
 <template>
   <main class="mx-auto grid min-h-screen w-full max-w-[1600px] grid-cols-1 gap-6 px-5 py-6 lg:grid-cols-[320px_1fr] lg:px-8" @keydown="onKeyDown" tabindex="0">
-    <aside class="rounded-[1.4rem] border border-ink/10 bg-white/90 p-5 shadow-soft backdrop-blur">
+    <aside class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-5 shadow-soft backdrop-blur">
       <div class="mb-4 border-b border-ink/10 pb-4">
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink/50">Pull Request</p>
         <h2 class="mt-2 text-2xl font-bold">Files</h2>
@@ -14,13 +14,13 @@
             class="w-full rounded-lg border px-3 py-2 text-left text-sm font-medium transition"
             :class="
               file.filePath === selectedFilePath
-                ? 'border-ink/60 bg-ink text-white'
-                : 'border-ink/10 bg-mist/70 text-ink hover:border-ink/30'
+                ? 'border-tide/70 bg-[#313244] text-ink'
+                : 'border-ink/20 bg-[#313244]/70 text-ink hover:border-ink/40'
             "
             @click="selectedFilePath = file.filePath"
           >
             <span class="block truncate">{{ file.filePath }}</span>
-            <span class="mt-0.5 block text-xs" :class="file.filePath === selectedFilePath ? 'text-white/75' : 'text-ink/60'">
+            <span class="mt-0.5 block text-xs" :class="file.filePath === selectedFilePath ? 'text-ink/80' : 'text-ink/60'">
               {{ file.reviewed }}/{{ file.total }} reviewed
             </span>
           </button>
@@ -36,12 +36,12 @@
     </aside>
 
     <section class="space-y-5">
-      <header class="flex flex-wrap items-center gap-3 rounded-[1.4rem] border border-ink/10 bg-white/90 p-4 shadow-soft backdrop-blur">
-        <div class="inline-flex rounded-xl border border-ink/15 bg-mist/75 p-1">
+      <header class="flex flex-wrap items-center gap-3 rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur">
+        <div class="inline-flex rounded-xl border border-ink/20 bg-[#313244] p-1">
           <button
             type="button"
             class="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition"
-            :class="mode === 'unified' ? 'bg-white text-ink shadow' : 'text-ink/60 hover:text-ink'"
+            :class="mode === 'unified' ? 'bg-[#45475a] text-ink shadow' : 'text-ink/60 hover:text-ink'"
             @click="mode = 'unified'"
           >
             Unified
@@ -49,7 +49,7 @@
           <button
             type="button"
             class="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition"
-            :class="mode === 'split' ? 'bg-white text-ink shadow' : 'text-ink/60 hover:text-ink'"
+            :class="mode === 'split' ? 'bg-[#45475a] text-ink shadow' : 'text-ink/60 hover:text-ink'"
             @click="mode = 'split'"
           >
             Split
@@ -58,7 +58,7 @@
 
         <label class="ml-auto flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink/60">
           Comments
-          <select v-model="commentFilterMode" class="rounded-lg border border-ink/15 bg-white px-2 py-1.5 text-xs font-medium text-ink outline-none transition focus:border-flare/50">
+          <select v-model="commentFilterMode" class="rounded-lg border border-ink/20 bg-[#313244] px-2 py-1.5 text-xs font-medium text-ink outline-none transition focus:border-flare/60">
             <option value="all">All</option>
             <option value="humans">Humans</option>
             <option value="bots">Bots</option>
@@ -67,7 +67,7 @@
         </label>
       </header>
 
-      <section class="rounded-[1.4rem] border border-ink/10 bg-white/90 p-4 shadow-soft backdrop-blur">
+      <section class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur">
         <div class="flex flex-wrap items-center gap-3">
           <p class="text-sm font-semibold text-ink">Viewed Changes</p>
           <span
@@ -95,13 +95,14 @@
         Loading pull request data...
       </p>
 
-      <section class="rounded-[1.4rem] border border-ink/10 bg-white/90 p-4 shadow-soft backdrop-blur">
+      <section class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur">
         <DiffView
           v-if="mode === 'split'"
           mode="split"
           :hunks="activeFileHunks"
           :file-path="selectedFilePath"
           :comments-tree="filteredCommentsTree"
+          @comment-line="startInlineComment($event.lineNumber)"
         />
         <DiffView
           v-else
@@ -109,30 +110,66 @@
           :hunks="activeFileHunks"
           :file-path="selectedFilePath"
           :comments-tree="filteredCommentsTree"
+          @comment-line="startInlineComment($event.lineNumber)"
         />
+
+        <section
+          v-if="inlineCommentLine !== null"
+          class="mt-4 rounded-xl border border-ink/20 bg-mist/70 p-4"
+        >
+          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-ink/65">
+            Add inline comment · line {{ inlineCommentLine }}
+          </p>
+          <textarea
+            v-model="inlineCommentBody"
+            rows="4"
+            placeholder="Write a code comment"
+            class="mt-3 w-full rounded-xl border border-ink/20 bg-[#181825] px-4 py-3 text-sm text-ink outline-none transition focus:border-flare/60 focus:ring-2 focus:ring-flare/20"
+          />
+          <div class="mt-3 flex flex-wrap gap-3">
+            <button
+              type="button"
+              class="rounded-xl bg-tide px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-tide/90"
+              @click="submitInlineCommentForLine"
+            >
+              Comment
+            </button>
+            <button
+              type="button"
+              class="rounded-xl border border-ink/30 px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-ink transition hover:border-ink/50"
+              @click="cancelInlineComment"
+            >
+              Cancel
+            </button>
+          </div>
+        </section>
       </section>
+
+      <p v-if="inlineCommentStatus" class="rounded-xl border border-ink/20 bg-mist/70 px-4 py-3 text-sm text-ink/90">
+        {{ inlineCommentStatus }}
+      </p>
 
       <VirtualDiffList :items="flatVisibleHunks" />
 
-      <section class="rounded-[1.4rem] border border-ink/10 bg-white/90 p-5 shadow-soft backdrop-blur">
+      <section class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-5 shadow-soft backdrop-blur">
         <h3 class="text-lg font-semibold">Submit Review</h3>
         <textarea
           v-model="reviewMessage"
           rows="4"
           placeholder="Optional review message"
-          class="mt-3 w-full rounded-xl border border-ink/15 bg-mist/70 px-4 py-3 text-sm text-ink outline-none transition focus:border-flare/60 focus:ring-2 focus:ring-flare/20"
+          class="mt-3 w-full rounded-xl border border-ink/20 bg-[#313244] px-4 py-3 text-sm text-ink outline-none transition focus:border-flare/60 focus:ring-2 focus:ring-flare/20"
         />
         <div class="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
-            class="rounded-xl bg-moss px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-moss/90"
+            class="rounded-xl bg-moss px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-moss/90"
             @click="sendReviewDecision('APPROVE')"
           >
             Approve
           </button>
           <button
             type="button"
-            class="rounded-xl bg-flare px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-flare/90"
+            class="rounded-xl bg-flare px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-flare/90"
             @click="sendReviewDecision('REQUEST_CHANGES')"
           >
             Request changes
@@ -160,6 +197,7 @@ import {
   getFilteredCommentTree,
   loadPullRequestReviewData,
   persistHunkViewedState,
+  submitInlineComment,
   submitReviewDecision,
   type PullRequestContext,
   type ReviewCommentTree
@@ -173,6 +211,9 @@ const isLoading = ref(false);
 const errorMessage = ref("");
 const reviewStatusMessage = ref("");
 const reviewMessage = ref("");
+const inlineCommentLine = ref<number | null>(null);
+const inlineCommentBody = ref("");
+const inlineCommentStatus = ref("");
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -280,6 +321,7 @@ async function onKeyDown(event: KeyboardEvent) {
 async function loadReview() {
   errorMessage.value = "";
   reviewStatusMessage.value = "";
+  inlineCommentStatus.value = "";
 
   if (!context.value) {
     return;
@@ -311,6 +353,56 @@ async function loadReview() {
     errorMessage.value = error instanceof Error ? error.message : "Failed to load review data";
   } finally {
     isLoading.value = false;
+  }
+}
+
+function startInlineComment(lineNumber: number) {
+  inlineCommentLine.value = lineNumber;
+  inlineCommentBody.value = "";
+  inlineCommentStatus.value = "";
+}
+
+function cancelInlineComment() {
+  inlineCommentLine.value = null;
+  inlineCommentBody.value = "";
+}
+
+async function submitInlineCommentForLine() {
+  inlineCommentStatus.value = "";
+
+  if (!context.value || !authStore.token) {
+    inlineCommentStatus.value = "Cannot submit inline comment without context and auth token.";
+    return;
+  }
+
+  if (!selectedFilePath.value || inlineCommentLine.value === null) {
+    inlineCommentStatus.value = "Choose a line before submitting a comment.";
+    return;
+  }
+
+  const body = inlineCommentBody.value.trim();
+  if (!body) {
+    inlineCommentStatus.value = "Comment cannot be empty.";
+    return;
+  }
+
+  try {
+    const githubFetch = createGitHubFetch(() => authStore.token);
+    await submitInlineComment(
+      {
+        ...context.value,
+        path: selectedFilePath.value,
+        line: inlineCommentLine.value,
+        body
+      },
+      githubFetch
+    );
+
+    inlineCommentStatus.value = "Inline comment submitted.";
+    cancelInlineComment();
+    await loadReview();
+  } catch (error) {
+    inlineCommentStatus.value = error instanceof Error ? error.message : "Inline comment submit failed";
   }
 }
 

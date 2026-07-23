@@ -1,6 +1,6 @@
 <template>
   <section class="mx-auto flex min-h-screen w-full max-w-2xl items-center px-6 py-14 sm:px-8">
-    <div class="w-full rounded-[2rem] border border-ink/10 bg-white/90 p-8 shadow-pane backdrop-blur sm:p-10">
+    <div class="w-full rounded-[2rem] border border-ink/20 bg-mist/90 p-8 shadow-pane backdrop-blur sm:p-10">
       <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink/55">GitHub OAuth</p>
       <h1 class="mt-3 text-3xl font-bold">Authorizing...</h1>
       <p class="mt-3 text-sm text-ink/70">Finishing OAuth callback and preparing your review workspace.</p>

@@ -12,15 +12,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#4c4f69",
-        mist: "#eff1f5",
-        flare: "#8839ef",
-        tide: "#1e66f5",
-        moss: "#40a02b"
+        ink: "#cdd6f4",
+        mist: "#1e1e2e",
+        flare: "#cba6f7",
+        tide: "#89b4fa",
+        moss: "#a6e3a1"
       },
       boxShadow: {
-        pane: "0 18px 40px rgba(76, 79, 105, 0.16)",
-        soft: "0 10px 20px rgba(76, 79, 105, 0.08)"
+        pane: "0 18px 40px rgba(17, 17, 27, 0.55)",
+        soft: "0 10px 20px rgba(17, 17, 27, 0.35)"
       },
       borderRadius: {
         xl2: "1.25rem"

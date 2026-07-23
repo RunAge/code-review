@@ -3,10 +3,10 @@
     :items="items"
     :item-size="84"
     key-field="patchId"
-    class="h-[70vh] overflow-hidden rounded-[1.4rem] border border-ink/10 bg-white/90 shadow-soft backdrop-blur"
+    class="h-[70vh] overflow-hidden rounded-[1.4rem] border border-ink/20 bg-mist/90 shadow-soft backdrop-blur"
   >
     <template #default="{ item }">
-      <article class="border-b border-ink/10 bg-white/80 p-4" :data-patch-id="item.patchId">
+      <article class="border-b border-ink/20 bg-[#181825] p-4" :data-patch-id="item.patchId">
         <header class="mb-2 flex items-start justify-between gap-3">
           <strong class="truncate text-sm font-semibold text-ink">{{ item.filePath }}</strong>
           <code class="max-w-[48%] truncate rounded-md border border-ink/10 bg-mist/80 px-2 py-1 text-[11px] text-ink/65">{{ item.patchId }}</code>

@@ -5,6 +5,7 @@ import {
   fetchIssueComments,
   fetchPullRequestComments,
   fetchResolvedThreadMap,
+  submitPullRequestInlineComment,
   submitPullRequestReview
 } from "../comments/githubCommentsApi";
 import { listViewedPatchIds, markHunkViewed, unmarkHunkViewed } from "../db/reviewDb";
@@ -132,6 +133,27 @@ export async function submitReviewDecision(
       repo: input.repo,
       pullNumber: input.pullNumber,
       event: input.event,
+      body: input.body
+    },
+    fetchImpl
+  );
+}
+
+export async function submitInlineComment(
+  input: PullRequestContext & {
+    path: string;
+    line: number;
+    body: string;
+  },
+  fetchImpl: typeof fetch
+) {
+  await submitPullRequestInlineComment(
+    {
+      owner: input.owner,
+      repo: input.repo,
+      pullNumber: input.pullNumber,
+      path: input.path,
+      line: input.line,
       body: input.body
     },
     fetchImpl

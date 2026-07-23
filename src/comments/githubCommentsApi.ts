@@ -21,6 +21,13 @@ interface ReviewSubmitInput extends RepoRef {
   body?: string;
 }
 
+interface InlineCommentSubmitInput extends RepoRef {
+  pullNumber: number;
+  path: string;
+  line: number;
+  body: string;
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     throw new Error(`GitHub API request failed with status ${response.status}`);
@@ -132,5 +139,29 @@ export async function submitPullRequestReview(
 
   if (!response.ok) {
     throw new Error(`GitHub review submission failed with status ${response.status}`);
+  }
+}
+
+export async function submitPullRequestInlineComment(
+  input: InlineCommentSubmitInput,
+  fetchImpl: typeof fetch = fetch
+): Promise<void> {
+  const url = `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.pullNumber}/comments`;
+  const response = await fetchImpl(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      body: input.body,
+      path: input.path,
+      line: input.line,
+      side: "RIGHT"
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub inline comment submission failed with status ${response.status}`);
   }
 }

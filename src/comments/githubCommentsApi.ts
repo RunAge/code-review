@@ -19,6 +19,11 @@ interface ReviewSubmitInput extends RepoRef {
   pullNumber: number;
   event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT";
   body?: string;
+  comments?: Array<{
+    path: string;
+    line: number;
+    body: string;
+  }>;
 }
 
 interface InlineCommentSubmitInput extends RepoRef {
@@ -125,6 +130,13 @@ export async function submitPullRequestReview(
   fetchImpl: typeof fetch = fetch
 ): Promise<void> {
   const url = `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.pullNumber}/reviews`;
+  const comments = (input.comments ?? []).map((comment) => ({
+    path: comment.path,
+    line: comment.line,
+    side: "RIGHT",
+    body: comment.body
+  }));
+
   const response = await fetchImpl(url, {
     method: "POST",
     headers: {
@@ -133,7 +145,8 @@ export async function submitPullRequestReview(
     },
     body: JSON.stringify({
       event: input.event,
-      body: input.body
+      body: input.body,
+      comments
     })
   });
 

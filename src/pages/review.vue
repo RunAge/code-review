@@ -132,7 +132,14 @@
               class="rounded-xl bg-tide px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-tide/90"
               @click="submitInlineCommentForLine"
             >
-              Comment
+              Add single comment
+            </button>
+            <button
+              type="button"
+              class="rounded-xl bg-flare px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-flare/90"
+              @click="addInlineCommentToReview"
+            >
+              {{ pendingInlineComments.length > 0 ? "Add to review" : "Start review" }}
             </button>
             <button
               type="button"
@@ -149,17 +156,49 @@
         {{ inlineCommentStatus }}
       </p>
 
-      <VirtualDiffList :items="flatVisibleHunks" />
-
       <section class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-5 shadow-soft backdrop-blur">
-        <h3 class="text-lg font-semibold">Submit Review</h3>
+        <h3 class="text-lg font-semibold">Finish your review</h3>
+
+        <section v-if="pendingInlineComments.length > 0" class="mt-3 rounded-xl border border-ink/20 bg-[#181825] p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-ink/70">
+            Pending review comments ({{ pendingInlineComments.length }})
+          </p>
+          <ul class="mt-3 space-y-2">
+            <li
+              v-for="comment in pendingInlineComments"
+              :key="`${comment.path}:${comment.line}:${comment.body}`"
+              class="rounded-lg border border-ink/20 bg-[#313244] p-3"
+            >
+              <div class="flex items-center gap-2 text-xs text-ink/70">
+                <span class="font-semibold">{{ comment.path }}</span>
+                <span>line {{ comment.line }}</span>
+              </div>
+              <p class="mt-1 text-sm text-ink/90 whitespace-pre-wrap">{{ comment.body }}</p>
+              <button
+                type="button"
+                class="mt-2 rounded-md border border-ink/30 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink/80 transition hover:border-flare/60 hover:text-flare"
+                @click="removePendingInlineComment(comment.path, comment.line, comment.body)"
+              >
+                Remove
+              </button>
+            </li>
+          </ul>
+        </section>
+
         <textarea
           v-model="reviewMessage"
           rows="4"
-          placeholder="Optional review message"
+          placeholder="Write a summary comment"
           class="mt-3 w-full rounded-xl border border-ink/20 bg-[#313244] px-4 py-3 text-sm text-ink outline-none transition focus:border-flare/60 focus:ring-2 focus:ring-flare/20"
         />
         <div class="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            class="rounded-xl bg-tide px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-tide/90"
+            @click="sendReviewDecision('COMMENT')"
+          >
+            Comment
+          </button>
           <button
             type="button"
             class="rounded-xl bg-moss px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-moss/90"
@@ -188,8 +227,7 @@ import { computed, onMounted, ref } from "vue";
 
 import DiffView from "../components/DiffView";
 import { buildFileTreeProgress } from "../components/fileTreeProgress";
-import VirtualDiffList from "../components/VirtualDiffList.vue";
-import { flattenReviewHunks, buildReviewPageState, type ParsedReviewFile } from "../composables/reviewPageModel";
+import { buildReviewPageState, type ParsedReviewFile } from "../composables/reviewPageModel";
 import { handleReviewShortcut } from "../composables/useKeyboardShortcuts";
 import { useAuthStore } from "../stores/authStore";
 import { useReviewStore } from "../stores/reviewStore";
@@ -214,6 +252,7 @@ const reviewMessage = ref("");
 const inlineCommentLine = ref<number | null>(null);
 const inlineCommentBody = ref("");
 const inlineCommentStatus = ref("");
+const pendingInlineComments = ref<Array<{ path: string; line: number; body: string }>>([]);
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -253,7 +292,6 @@ const contextLabel = computed(() => {
 });
 
 const state = computed(() => buildReviewPageState(parsedFiles.value));
-const flatVisibleHunks = computed(() => flattenReviewHunks(state.value.visibleFiles));
 const filteredCommentsTree = computed(() => getFilteredCommentTree(commentsTree.value, commentFilterMode.value));
 
 const activeFileHunks = computed(() => {
@@ -367,6 +405,40 @@ function cancelInlineComment() {
   inlineCommentBody.value = "";
 }
 
+function addInlineCommentToReview() {
+  inlineCommentStatus.value = "";
+
+  if (!selectedFilePath.value || inlineCommentLine.value === null) {
+    inlineCommentStatus.value = "Choose a line before adding a review comment.";
+    return;
+  }
+
+  const body = inlineCommentBody.value.trim();
+  if (!body) {
+    inlineCommentStatus.value = "Comment cannot be empty.";
+    return;
+  }
+
+  pendingInlineComments.value.push({
+    path: selectedFilePath.value,
+    line: inlineCommentLine.value,
+    body
+  });
+
+  inlineCommentStatus.value = "Comment added to pending review.";
+  cancelInlineComment();
+}
+
+function removePendingInlineComment(path: string, line: number, body: string) {
+  const index = pendingInlineComments.value.findIndex(
+    (comment) => comment.path === path && comment.line === line && comment.body === body
+  );
+
+  if (index >= 0) {
+    pendingInlineComments.value.splice(index, 1);
+  }
+}
+
 async function submitInlineCommentForLine() {
   inlineCommentStatus.value = "";
 
@@ -406,7 +478,7 @@ async function submitInlineCommentForLine() {
   }
 }
 
-async function sendReviewDecision(event: "APPROVE" | "REQUEST_CHANGES") {
+async function sendReviewDecision(event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT") {
   reviewStatusMessage.value = "";
 
   if (!context.value || !authStore.token) {
@@ -420,12 +492,16 @@ async function sendReviewDecision(event: "APPROVE" | "REQUEST_CHANGES") {
       {
         ...context.value,
         event,
-        body: reviewMessage.value.trim() || undefined
+        body: reviewMessage.value.trim() || undefined,
+        comments: pendingInlineComments.value
       },
       githubFetch
     );
 
     reviewStatusMessage.value = `Review submitted: ${event}`;
+    pendingInlineComments.value = [];
+    reviewMessage.value = "";
+    await loadReview();
   } catch (error) {
     reviewStatusMessage.value = error instanceof Error ? error.message : "Review submit failed";
   }

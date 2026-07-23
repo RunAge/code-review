@@ -124,7 +124,15 @@ export async function persistHunkViewedState(input: {
 }
 
 export async function submitReviewDecision(
-  input: PullRequestContext & { event: "APPROVE" | "REQUEST_CHANGES"; body?: string },
+  input: PullRequestContext & {
+    event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT";
+    body?: string;
+    comments?: Array<{
+      path: string;
+      line: number;
+      body: string;
+    }>;
+  },
   fetchImpl: typeof fetch
 ) {
   await submitPullRequestReview(
@@ -133,7 +141,8 @@ export async function submitReviewDecision(
       repo: input.repo,
       pullNumber: input.pullNumber,
       event: input.event,
-      body: input.body
+      body: input.body,
+      comments: input.comments
     },
     fetchImpl
   );

@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 export interface ReviewHunkState {
   patchId: string;
   isViewed: boolean;
+  filePath?: string;
 }
 
 interface ReviewState {

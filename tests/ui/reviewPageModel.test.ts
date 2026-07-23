@@ -10,13 +10,13 @@ const files: ParsedReviewFile[] = [
   {
     newPath: "src/a.ts",
     hunks: [
-      { patchId: "a1", lines: [{ type: "added", content: "+const x = 1;" }] },
-      { patchId: "a2", lines: [{ type: "added", content: "+const y = 2;" }] }
+      { patchId: "a1", header: "@@ -1 +1 @@", lines: [{ type: "added", content: "+const x = 1;" }] },
+      { patchId: "a2", header: "@@ -2 +2 @@", lines: [{ type: "added", content: "+const y = 2;" }] }
     ]
   },
   {
     newPath: "src/types.gen.ts",
-    hunks: [{ patchId: "g1", lines: [{ type: "added", content: "+type T = string;" }] }]
+    hunks: [{ patchId: "g1", header: "@@ -0,0 +1 @@", lines: [{ type: "added", content: "+type T = string;" }] }]
   }
 ];
 

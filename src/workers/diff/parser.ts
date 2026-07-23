@@ -8,7 +8,7 @@ function parseHunkHeader(header: string): { oldLine: number; newLine: number } {
 
   return {
     oldLine: Number.parseInt(match[1], 10),
-    newLine: Number.parseInt(match[2], 10)
+    newLine: Number.parseInt(match[2], 10),
   };
 }
 
@@ -84,7 +84,7 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
         currentHunk.lines.push({
           ...parsedLine,
           oldLineNumber: oldLine,
-          newLineNumber: null
+          newLineNumber: null,
         });
         oldLine += 1;
         continue;
@@ -94,7 +94,7 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
         currentHunk.lines.push({
           ...parsedLine,
           oldLineNumber: null,
-          newLineNumber: newLine
+          newLineNumber: newLine,
         });
         newLine += 1;
         continue;
@@ -103,7 +103,7 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
       currentHunk.lines.push({
         ...parsedLine,
         oldLineNumber: oldLine,
-        newLineNumber: newLine
+        newLineNumber: newLine,
       });
       oldLine += 1;
       newLine += 1;

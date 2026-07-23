@@ -9,9 +9,9 @@ const hunks = [
     header: "@@ -1,2 +1,2 @@",
     lines: [
       { type: "removed" as const, content: "-const a=1;" },
-      { type: "added" as const, content: "+const a = 1;" }
-    ]
-  }
+      { type: "added" as const, content: "+const a = 1;" },
+    ],
+  },
 ];
 
 describe("DiffView", () => {
@@ -19,8 +19,8 @@ describe("DiffView", () => {
     const wrapper = mount(DiffView, {
       props: {
         mode: "unified",
-        hunks
-      }
+        hunks,
+      },
     });
 
     expect(wrapper.find("[data-testid='mode-unified']").exists()).toBe(true);
@@ -31,8 +31,8 @@ describe("DiffView", () => {
     const wrapper = mount(DiffView, {
       props: {
         mode: "split",
-        hunks
-      }
+        hunks,
+      },
     });
 
     expect(wrapper.find("[data-testid='mode-split']").exists()).toBe(true);

@@ -15,7 +15,7 @@ describe("keyboard shortcuts", () => {
     store.setHunks([
       { patchId: "a", isViewed: false },
       { patchId: "b", isViewed: false },
-      { patchId: "c", isViewed: true }
+      { patchId: "c", isViewed: true },
     ]);
 
     expect(store.activeIndex).toBe(0);

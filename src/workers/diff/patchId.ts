@@ -13,7 +13,10 @@ export function normalizePatchLines(lines: DiffLine[]): string[] {
       continue;
     }
 
-    const trimmedTrailing = getContentWithoutMarker(line.content).replace(/[ \t]+$/g, "");
+    const trimmedTrailing = getContentWithoutMarker(line.content).replace(
+      /[ \t]+$/g,
+      ""
+    );
 
     if (!trimmedTrailing.trim()) {
       continue;
@@ -36,7 +39,9 @@ async function sha256(input: string): Promise<string> {
   return bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-export async function createPatchId(hunk: Pick<DiffHunk, "lines">): Promise<string> {
+export async function createPatchId(
+  hunk: Pick<DiffHunk, "lines">
+): Promise<string> {
   const normalized = normalizePatchLines(hunk.lines);
   return sha256(normalized.join("\n"));
 }

@@ -6,7 +6,7 @@ import {
   isHunkViewed,
   listViewedHunks,
   markHunkViewed,
-  unmarkHunkViewed
+  unmarkHunkViewed,
 } from "../../src/db/reviewDb";
 
 describe("reviewDb", () => {
@@ -15,8 +15,17 @@ describe("reviewDb", () => {
   });
 
   it("creates review entry and marks hunk as viewed", async () => {
-    await createReview({ prId: 101, owner: "acme", repo: "tool", title: "PR 101" });
-    await markHunkViewed({ prId: 101, filePath: "src/a.ts", patchId: "hash_1" });
+    await createReview({
+      prId: 101,
+      owner: "acme",
+      repo: "tool",
+      title: "PR 101",
+    });
+    await markHunkViewed({
+      prId: 101,
+      filePath: "src/a.ts",
+      patchId: "hash_1",
+    });
 
     expect(await isHunkViewed(101, "hash_1")).toBe(true);
 
@@ -26,7 +35,11 @@ describe("reviewDb", () => {
   });
 
   it("supports unmarking hunk as viewed", async () => {
-    await markHunkViewed({ prId: 202, filePath: "src/b.ts", patchId: "hash_2" });
+    await markHunkViewed({
+      prId: 202,
+      filePath: "src/b.ts",
+      patchId: "hash_2",
+    });
     expect(await isHunkViewed(202, "hash_2")).toBe(true);
 
     await unmarkHunkViewed(202, "hash_2");

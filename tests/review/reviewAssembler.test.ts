@@ -13,12 +13,19 @@ describe("assembleReviewData", () => {
             {
               header: "@@ -1 +1 @@",
               patchId: "hash_1",
-              lines: [{ type: "added", content: "+const x = 1;", newLineNumber: 1, oldLineNumber: null }]
-            }
-          ]
-        }
+              lines: [
+                {
+                  type: "added",
+                  content: "+const x = 1;",
+                  newLineNumber: 1,
+                  oldLineNumber: null,
+                },
+              ],
+            },
+          ],
+        },
       ],
-      viewedPatchIds: new Set(["hash_1"])
+      viewedPatchIds: new Set(["hash_1"]),
     });
 
     expect(result.hunks).toHaveLength(1);

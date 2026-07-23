@@ -3,7 +3,7 @@ import {
   buildGitHubAuthorizeUrl,
   createOAuthState,
   parseOAuthCallbackParams,
-  validateOAuthState
+  validateOAuthState,
 } from "./oauth";
 
 export interface CreateOAuthLoginRequestInput {
@@ -24,7 +24,9 @@ export interface ExchangeCodeInput {
   codeVerifier: string;
 }
 
-export type ExchangeCodeForToken = (input: ExchangeCodeInput) => Promise<string>;
+export type ExchangeCodeForToken = (
+  input: ExchangeCodeInput
+) => Promise<string>;
 
 export interface FinishOAuthCallbackInput {
   callbackUrl: string;
@@ -46,17 +48,19 @@ export async function createOAuthLoginRequest(
     redirectUri: input.redirectUri,
     codeChallenge,
     state,
-    scope: input.scope
+    scope: input.scope,
   });
 
   return {
     authorizeUrl,
     verifier,
-    state
+    state,
   };
 }
 
-export async function finishOAuthCallback(input: FinishOAuthCallbackInput): Promise<string> {
+export async function finishOAuthCallback(
+  input: FinishOAuthCallbackInput
+): Promise<string> {
   const parsed = parseOAuthCallbackParams(input.callbackUrl);
 
   if (parsed.error) {
@@ -74,6 +78,6 @@ export async function finishOAuthCallback(input: FinishOAuthCallbackInput): Prom
   return input.exchangeCodeForToken({
     clientId: input.clientId,
     code: parsed.code,
-    codeVerifier: input.codeVerifier
+    codeVerifier: input.codeVerifier,
   });
 }

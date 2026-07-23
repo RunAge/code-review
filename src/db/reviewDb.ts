@@ -31,7 +31,7 @@ class ReviewDb extends Dexie {
 
     this.version(1).stores({
       reviews: "++id, prId, owner, repo, createdAt",
-      viewedHunks: "++id, [prId+patchId], prId, filePath, patchId, timestamp"
+      viewedHunks: "++id, [prId+patchId], prId, filePath, patchId, timestamp",
     });
   }
 }
@@ -46,7 +46,7 @@ export async function createReview(input: {
 }): Promise<number | undefined> {
   return db.reviews.add({
     ...input,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   });
 }
 
@@ -55,35 +55,52 @@ export async function markHunkViewed(input: {
   filePath: string;
   patchId: string;
 }): Promise<void> {
-  const existing = await db.viewedHunks.where("[prId+patchId]").equals([input.prId, input.patchId]).first();
+  const existing = await db.viewedHunks
+    .where("[prId+patchId]")
+    .equals([input.prId, input.patchId])
+    .first();
 
   if (existing?.id) {
     await db.viewedHunks.update(existing.id, {
       filePath: input.filePath,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
     return;
   }
 
   await db.viewedHunks.add({
     ...input,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 }
 
-export async function unmarkHunkViewed(prId: number, patchId: string): Promise<void> {
-  const existing = await db.viewedHunks.where("[prId+patchId]").equals([prId, patchId]).first();
+export async function unmarkHunkViewed(
+  prId: number,
+  patchId: string
+): Promise<void> {
+  const existing = await db.viewedHunks
+    .where("[prId+patchId]")
+    .equals([prId, patchId])
+    .first();
   if (existing?.id) {
     await db.viewedHunks.delete(existing.id);
   }
 }
 
-export async function isHunkViewed(prId: number, patchId: string): Promise<boolean> {
-  const row = await db.viewedHunks.where("[prId+patchId]").equals([prId, patchId]).first();
+export async function isHunkViewed(
+  prId: number,
+  patchId: string
+): Promise<boolean> {
+  const row = await db.viewedHunks
+    .where("[prId+patchId]")
+    .equals([prId, patchId])
+    .first();
   return Boolean(row);
 }
 
-export async function listViewedHunks(prId: number): Promise<ViewedHunkRecord[]> {
+export async function listViewedHunks(
+  prId: number
+): Promise<ViewedHunkRecord[]> {
   return db.viewedHunks.where("prId").equals(prId).toArray();
 }
 

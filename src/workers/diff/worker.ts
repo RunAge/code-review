@@ -11,9 +11,9 @@ self.onmessage = async (event: MessageEvent<{ diff: string }>) => {
       hunks: await Promise.all(
         file.hunks.map(async (hunk) => ({
           ...hunk,
-          patchId: await createPatchId(hunk)
+          patchId: await createPatchId(hunk),
         }))
-      )
+      ),
     }))
   );
 

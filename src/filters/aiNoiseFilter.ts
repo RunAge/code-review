@@ -5,7 +5,7 @@ const NOISE_FILE_PATTERNS = [
   /\.gen\.ts$/,
   /(^|\/)schema\.sql$/,
   /(^|\/)dist\//,
-  /(^|\/)build\//
+  /(^|\/)build\//,
 ];
 
 export type NoiseClassification = "noise" | "relevant";
@@ -16,11 +16,7 @@ export function classifyAiNoise(filePath: string): NoiseClassification {
 }
 
 function normalizeCodeLine(line: string): string {
-  return line
-    .slice(1)
-    .replace(/["']/g, "")
-    .replace(/\s+/g, "")
-    .trim();
+  return line.slice(1).replace(/["']/g, "").replace(/\s+/g, "").trim();
 }
 
 export function shouldCollapseHunk(lines: string[]): boolean {
@@ -35,7 +31,9 @@ export function shouldCollapseHunk(lines: string[]): boolean {
     return false;
   }
 
-  const allImports = [...added, ...removed].every((line) => /^(\+|-)\s*import\s/.test(line));
+  const allImports = [...added, ...removed].every((line) =>
+    /^(\+|-)\s*import\s/.test(line)
+  );
   if (allImports) {
     return true;
   }

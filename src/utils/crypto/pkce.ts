@@ -1,5 +1,6 @@
 const VERIFIER_LENGTH = 128;
-const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+const ALLOWED_CHARS =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 
 function toBase64Url(input: ArrayBuffer): string {
   const bytes = new Uint8Array(input);
@@ -9,7 +10,10 @@ function toBase64Url(input: ArrayBuffer): string {
     binary += String.fromCharCode(byte);
   }
 
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
 function getCryptoObject(): Crypto {
@@ -20,7 +24,9 @@ function getCryptoObject(): Crypto {
   return globalThis.crypto;
 }
 
-export async function generateCodeVerifier(length = VERIFIER_LENGTH): Promise<string> {
+export async function generateCodeVerifier(
+  length = VERIFIER_LENGTH
+): Promise<string> {
   const cryptoObject = getCryptoObject();
   const bytes = new Uint8Array(length);
   cryptoObject.getRandomValues(bytes);

@@ -1,6 +1,9 @@
 type TokenResolver = () => string | null;
 
-export function createGitHubFetch(tokenResolver: TokenResolver, fetchImpl: typeof fetch = fetch) {
+export function createGitHubFetch(
+  tokenResolver: TokenResolver,
+  fetchImpl: typeof fetch = fetch
+) {
   return async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const token = tokenResolver();
     const headers = new Headers(init.headers);
@@ -11,7 +14,7 @@ export function createGitHubFetch(tokenResolver: TokenResolver, fetchImpl: typeo
 
     return fetchImpl(input, {
       ...init,
-      headers
+      headers,
     });
   };
 }

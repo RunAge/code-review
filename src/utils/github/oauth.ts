@@ -1,5 +1,6 @@
 const STATE_LENGTH = 32;
-const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+const ALLOWED_CHARS =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
 
 export interface BuildGitHubAuthorizeUrlInput {
   clientId: string;
@@ -29,7 +30,9 @@ export function createOAuthState(length = STATE_LENGTH): string {
   return state;
 }
 
-export function buildGitHubAuthorizeUrl(input: BuildGitHubAuthorizeUrlInput): URL {
+export function buildGitHubAuthorizeUrl(
+  input: BuildGitHubAuthorizeUrlInput
+): URL {
   const url = new URL("https://github.com/login/oauth/authorize");
 
   url.searchParams.set("client_id", input.clientId);
@@ -56,10 +59,13 @@ export function parseOAuthCallbackParams(callbackUrl: string): {
   return {
     code: url.searchParams.get("code"),
     state: url.searchParams.get("state"),
-    error: url.searchParams.get("error")
+    error: url.searchParams.get("error"),
   };
 }
 
-export function validateOAuthState(expectedState: string, actualState: string | null): boolean {
+export function validateOAuthState(
+  expectedState: string,
+  actualState: string | null
+): boolean {
   return actualState === expectedState;
 }

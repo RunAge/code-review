@@ -10,9 +10,16 @@
 
 body {
   @apply min-h-screen bg-mist text-ink antialiased;
-  background-image:
-    radial-gradient(80rem 36rem at -12% -8%, rgba(203, 166, 247, 0.24), transparent 62%),
-    radial-gradient(60rem 26rem at 112% -5%, rgba(137, 180, 250, 0.22), transparent 58%),
+  background-image: radial-gradient(
+      80rem 36rem at -12% -8%,
+      rgba(203, 166, 247, 0.24),
+      transparent 62%
+    ),
+    radial-gradient(
+      60rem 26rem at 112% -5%,
+      rgba(137, 180, 250, 0.22),
+      transparent 58%
+    ),
     linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
 }
 

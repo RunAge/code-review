@@ -20,7 +20,7 @@ function parseGitHubTokenPayload(rawBody: string): GitHubTokenResponse {
     return {
       access_token: params.get("access_token") ?? undefined,
       error: params.get("error") ?? undefined,
-      error_description: params.get("error_description") ?? undefined
+      error_description: params.get("error_description") ?? undefined,
     };
   }
 }
@@ -30,7 +30,7 @@ function normalizeOAuthError(details: string): string {
     return [
       "GitHub rejected OAuth client credentials.",
       "Verify OAuth app client_id/client_secret in GitHub settings.",
-      "For static GitHub Pages deployments, token exchange should be done by a backend, or use PAT login."
+      "For static GitHub Pages deployments, token exchange should be done by a backend, or use PAT login.",
     ].join(" ");
   }
 
@@ -42,7 +42,9 @@ export async function exchangeCodeForToken(
   fetchImpl: typeof fetch = fetch
 ): Promise<string> {
   const isCustomEndpoint = Boolean(input.tokenExchangeUrl?.trim());
-  const url = input.tokenExchangeUrl?.trim() || "https://github.com/login/oauth/access_token";
+  const url =
+    input.tokenExchangeUrl?.trim() ||
+    "https://github.com/login/oauth/access_token";
 
   try {
     let response: Response;
@@ -51,29 +53,29 @@ export async function exchangeCodeForToken(
         method: "POST",
         headers: {
           Accept: "application/json",
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           client_id: input.clientId,
           code: input.code,
           code_verifier: input.codeVerifier,
-          redirect_uri: input.redirectUri
-        })
+          redirect_uri: input.redirectUri,
+        }),
       });
     } else {
       const form = new URLSearchParams({
         client_id: input.clientId,
         code: input.code,
         code_verifier: input.codeVerifier,
-        redirect_uri: input.redirectUri
+        redirect_uri: input.redirectUri,
       });
 
       response = await fetchImpl(url, {
         method: "POST",
         headers: {
-          Accept: "application/json"
+          Accept: "application/json",
         },
-        body: form
+        body: form,
       });
     }
 
@@ -82,9 +84,12 @@ export async function exchangeCodeForToken(
 
     if (!response.ok || !payload.access_token) {
       const details =
-        [payload.error, payload.error_description].filter((part): part is string => Boolean(part)).join(": ") ||
-        "missing access token";
-      throw new Error(`GitHub token exchange failed: ${normalizeOAuthError(details)}`);
+        [payload.error, payload.error_description]
+          .filter((part): part is string => Boolean(part))
+          .join(": ") || "missing access token";
+      throw new Error(
+        `GitHub token exchange failed: ${normalizeOAuthError(details)}`
+      );
     }
 
     return payload.access_token;
@@ -93,7 +98,7 @@ export async function exchangeCodeForToken(
       throw new Error(
         [
           "GitHub token exchange failed due to browser CORS/network restrictions.",
-          "If this app is hosted as static GitHub Pages, use PAT login or set NUXT_PUBLIC_GITHUB_TOKEN_EXCHANGE_URL to a backend OAuth exchange endpoint."
+          "If this app is hosted as static GitHub Pages, use PAT login or set NUXT_PUBLIC_GITHUB_TOKEN_EXCHANGE_URL to a backend OAuth exchange endpoint.",
         ].join(" ")
       );
     }

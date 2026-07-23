@@ -11,7 +11,7 @@ describe("outdated comments", () => {
         line: 10,
         outdated: true,
         patchId: "hash_1",
-        body: "still relevant"
+        body: "still relevant",
       },
       {
         id: 8,
@@ -19,12 +19,12 @@ describe("outdated comments", () => {
         line: 2,
         outdated: true,
         patchId: "hash_missing",
-        body: "old thread"
-      }
+        body: "old thread",
+      },
     ];
 
     const currentHunks = [
-      { patchId: "hash_1", filePath: "src/a.ts", startLine: 30 }
+      { patchId: "hash_1", filePath: "src/a.ts", startLine: 30 },
     ];
 
     const result = remapOutdatedComments(comments, currentHunks);

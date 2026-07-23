@@ -4,7 +4,7 @@ import {
   fetchIssueComments,
   fetchPullRequestComments,
   fetchResolvedThreadMap,
-  submitPullRequestReview
+  submitPullRequestReview,
 } from "../../src/comments/githubCommentsApi";
 
 describe("github comments api", () => {
@@ -14,13 +14,13 @@ describe("github comments api", () => {
       .mockResolvedValueOnce(
         new Response(JSON.stringify([{ id: 1, path: "src/a.ts", line: 2 }]), {
           status: 200,
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json" },
         })
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify([{ id: 10, body: "general" }]), {
           status: 200,
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json" },
         })
       );
 
@@ -48,12 +48,12 @@ describe("github comments api", () => {
                 reviewThreads: {
                   nodes: [
                     { id: "T1", isResolved: true },
-                    { id: "T2", isResolved: false }
-                  ]
-                }
-              }
-            }
-          }
+                    { id: "T2", isResolved: false },
+                  ],
+                },
+              },
+            },
+          },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       )
@@ -69,7 +69,9 @@ describe("github comments api", () => {
   });
 
   it("submits review action", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 200 }));
 
     await submitPullRequestReview(
       {
@@ -77,7 +79,7 @@ describe("github comments api", () => {
         repo: "tool",
         pullNumber: 12,
         event: "APPROVE",
-        body: "Looks good"
+        body: "Looks good",
       },
       fetchMock as unknown as typeof fetch
     );
@@ -88,7 +90,9 @@ describe("github comments api", () => {
   });
 
   it("throws when pull request comments endpoint returns non-OK status", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 500 }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("{}", { status: 500 }));
 
     await expect(
       fetchPullRequestComments(
@@ -99,7 +103,9 @@ describe("github comments api", () => {
   });
 
   it("throws when review submission fails", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 422 }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 422 }));
 
     await expect(
       submitPullRequestReview(
@@ -108,7 +114,7 @@ describe("github comments api", () => {
           repo: "tool",
           pullNumber: 12,
           event: "REQUEST_CHANGES",
-          body: "Needs fixes"
+          body: "Needs fixes",
         },
         fetchMock as unknown as typeof fetch
       )

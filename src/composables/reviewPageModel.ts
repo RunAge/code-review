@@ -22,7 +22,9 @@ export interface FlatReviewHunk {
   lines: ParsedReviewHunk["lines"];
 }
 
-export function buildReviewPageState(files: ParsedReviewFile[]): ReviewPageState {
+export function buildReviewPageState(
+  files: ParsedReviewFile[]
+): ReviewPageState {
   const visibleFiles: ParsedReviewFile[] = [];
   const noiseFiles: ParsedReviewFile[] = [];
 
@@ -37,12 +39,14 @@ export function buildReviewPageState(files: ParsedReviewFile[]): ReviewPageState
   return { visibleFiles, noiseFiles };
 }
 
-export function flattenReviewHunks(files: ParsedReviewFile[]): FlatReviewHunk[] {
+export function flattenReviewHunks(
+  files: ParsedReviewFile[]
+): FlatReviewHunk[] {
   return files.flatMap((file) =>
     file.hunks.map((hunk) => ({
       filePath: file.newPath,
       patchId: hunk.patchId,
-      lines: hunk.lines
+      lines: hunk.lines,
     }))
   );
 }

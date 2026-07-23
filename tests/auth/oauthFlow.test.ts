@@ -4,7 +4,7 @@ import {
   buildGitHubAuthorizeUrl,
   createOAuthState,
   parseOAuthCallbackParams,
-  validateOAuthState
+  validateOAuthState,
 } from "../../src/utils/github/oauth";
 
 describe("OAuth flow", () => {
@@ -14,12 +14,16 @@ describe("OAuth flow", () => {
       redirectUri: "http://localhost:3000/auth/callback",
       codeChallenge: "challenge_abc",
       state: "state_123",
-      scope: "repo pull_request:write"
+      scope: "repo pull_request:write",
     });
 
-    expect(url.origin + url.pathname).toBe("https://github.com/login/oauth/authorize");
+    expect(url.origin + url.pathname).toBe(
+      "https://github.com/login/oauth/authorize"
+    );
     expect(url.searchParams.get("client_id")).toBe("client_123");
-    expect(url.searchParams.get("redirect_uri")).toBe("http://localhost:3000/auth/callback");
+    expect(url.searchParams.get("redirect_uri")).toBe(
+      "http://localhost:3000/auth/callback"
+    );
     expect(url.searchParams.get("code_challenge")).toBe("challenge_abc");
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("state")).toBe("state_123");

@@ -50,8 +50,8 @@ export async function fetchPullRequestComments(
   const url = `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.pullNumber}/comments`;
   const response = await fetchImpl(url, {
     headers: {
-      Accept: "application/vnd.github+json"
-    }
+      Accept: "application/vnd.github+json",
+    },
   });
 
   return parseJson<unknown[]>(response);
@@ -64,8 +64,8 @@ export async function fetchIssueComments(
   const url = `https://api.github.com/repos/${input.owner}/${input.repo}/issues/${input.issueNumber}/comments`;
   const response = await fetchImpl(url, {
     headers: {
-      Accept: "application/vnd.github+json"
-    }
+      Accept: "application/vnd.github+json",
+    },
   });
 
   return parseJson<unknown[]>(response);
@@ -104,21 +104,22 @@ export async function fetchResolvedThreadMap(
     method: "POST",
     headers: {
       Accept: "application/vnd.github+json",
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       query,
       variables: {
         owner: input.owner,
         repo: input.repo,
-        number: input.pullNumber
-      }
-    })
+        number: input.pullNumber,
+      },
+    }),
   });
 
   const payload = await parseJson<GraphQLThreadsResponse>(response);
   const map = new Map<string, boolean>();
-  const nodes = payload.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
+  const nodes =
+    payload.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
 
   for (const node of nodes) {
     map.set(node.id, node.isResolved);
@@ -134,11 +135,13 @@ export async function submitPullRequestReview(
   const url = `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.pullNumber}/reviews`;
   const comments = (input.comments ?? []).map((comment) => {
     const normalizedStartLine =
-      typeof comment.startLine === "number" && comment.startLine !== comment.line
+      typeof comment.startLine === "number" &&
+      comment.startLine !== comment.line
         ? Math.min(comment.startLine, comment.line)
         : undefined;
     const normalizedEndLine =
-      typeof comment.startLine === "number" && comment.startLine !== comment.line
+      typeof comment.startLine === "number" &&
+      comment.startLine !== comment.line
         ? Math.max(comment.startLine, comment.line)
         : comment.line;
 
@@ -148,7 +151,7 @@ export async function submitPullRequestReview(
       side: "RIGHT",
       start_line: normalizedStartLine,
       start_side: normalizedStartLine ? "RIGHT" : undefined,
-      body: comment.body
+      body: comment.body,
     };
   });
 
@@ -156,17 +159,19 @@ export async function submitPullRequestReview(
     method: "POST",
     headers: {
       Accept: "application/vnd.github+json",
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       event: input.event,
       body: input.body,
-      comments
-    })
+      comments,
+    }),
   });
 
   if (!response.ok) {
-    throw new Error(`GitHub review submission failed with status ${response.status}`);
+    throw new Error(
+      `GitHub review submission failed with status ${response.status}`
+    );
   }
 }
 
@@ -179,22 +184,28 @@ export async function submitPullRequestInlineComment(
     method: "POST",
     headers: {
       Accept: "application/vnd.github+json",
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       body: input.body,
       path: input.path,
-      line: input.startLine && input.startLine !== input.line ? Math.max(input.startLine, input.line) : input.line,
+      line:
+        input.startLine && input.startLine !== input.line
+          ? Math.max(input.startLine, input.line)
+          : input.line,
       side: "RIGHT",
       start_line:
         input.startLine && input.startLine !== input.line
           ? Math.min(input.startLine, input.line)
           : undefined,
-      start_side: input.startLine && input.startLine !== input.line ? "RIGHT" : undefined
-    })
+      start_side:
+        input.startLine && input.startLine !== input.line ? "RIGHT" : undefined,
+    }),
   });
 
   if (!response.ok) {
-    throw new Error(`GitHub inline comment submission failed with status ${response.status}`);
+    throw new Error(
+      `GitHub inline comment submission failed with status ${response.status}`
+    );
   }
 }

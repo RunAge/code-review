@@ -9,14 +9,16 @@ export interface FileProgress {
   total: number;
 }
 
-export function buildFileTreeProgress(hunks: HunkProgressInput[]): FileProgress[] {
+export function buildFileTreeProgress(
+  hunks: HunkProgressInput[]
+): FileProgress[] {
   const byFile = new Map<string, FileProgress>();
 
   for (const hunk of hunks) {
     const entry = byFile.get(hunk.filePath) ?? {
       filePath: hunk.filePath,
       reviewed: 0,
-      total: 0
+      total: 0,
     };
 
     entry.total += 1;
@@ -27,5 +29,7 @@ export function buildFileTreeProgress(hunks: HunkProgressInput[]): FileProgress[
     byFile.set(hunk.filePath, entry);
   }
 
-  return Array.from(byFile.values()).sort((a, b) => a.filePath.localeCompare(b.filePath));
+  return Array.from(byFile.values()).sort((a, b) =>
+    a.filePath.localeCompare(b.filePath)
+  );
 }

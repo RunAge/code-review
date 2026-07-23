@@ -8,11 +8,11 @@ interface AuthState {
 
 export const useAuthStore = defineStore("auth", {
   state: (): AuthState => ({
-    token: getToken()
+    token: getToken(),
   }),
 
   getters: {
-    isAuthenticated: (state) => state.token !== null
+    isAuthenticated: (state) => state.token !== null,
   },
 
   actions: {
@@ -28,6 +28,6 @@ export const useAuthStore = defineStore("auth", {
     logout() {
       this.token = null;
       clearToken();
-    }
-  }
+    },
+  },
 });

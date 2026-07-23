@@ -10,7 +10,11 @@ export interface FileTreeNode {
   children: FileTreeNode[];
 }
 
-function createFolderNode(id: string, name: string, path: string): FileTreeNode {
+function createFolderNode(
+  id: string,
+  name: string,
+  path: string
+): FileTreeNode {
   return {
     id,
     name,
@@ -18,7 +22,7 @@ function createFolderNode(id: string, name: string, path: string): FileTreeNode 
     type: "folder",
     reviewed: 0,
     total: 0,
-    children: []
+    children: [],
   };
 }
 
@@ -48,7 +52,7 @@ export function buildFileTree(entries: FileProgress[]): FileTreeNode[] {
           type: "file",
           reviewed: entry.reviewed,
           total: entry.total,
-          children: []
+          children: [],
         };
 
         if (parentNode) {
@@ -86,8 +90,14 @@ export function buildFileTree(entries: FileProgress[]): FileTreeNode[] {
       .filter((node) => node.type === "folder")
       .map((folder) => {
         folder.children = sortAndRollup(folder.children);
-        folder.reviewed = folder.children.reduce((sum, child) => sum + child.reviewed, 0);
-        folder.total = folder.children.reduce((sum, child) => sum + child.total, 0);
+        folder.reviewed = folder.children.reduce(
+          (sum, child) => sum + child.reviewed,
+          0
+        );
+        folder.total = folder.children.reduce(
+          (sum, child) => sum + child.total,
+          0
+        );
         return folder;
       })
       .sort((a, b) => a.name.localeCompare(b.name));

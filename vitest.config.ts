@@ -6,8 +6,8 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     environmentOptions: {
       jsdom: {
-        url: "http://localhost/"
-      }
+        url: "http://localhost/",
+      },
     },
     include: ["tests/**/*.test.ts"],
     coverage: {
@@ -21,14 +21,14 @@ export default defineConfig({
         "src/stores/**/*.ts",
         "src/utils/**/*.ts",
         "src/workers/diff/parser.ts",
-        "src/workers/diff/patchId.ts"
+        "src/workers/diff/patchId.ts",
       ],
       thresholds: {
         lines: 85,
         functions: 85,
         branches: 85,
-        statements: 85
-      }
-    }
-  }
+        statements: 85,
+      },
+    },
+  },
 });

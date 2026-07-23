@@ -3,7 +3,7 @@ import {
   finishOAuthCallback,
   type CreateOAuthLoginRequestInput,
   type ExchangeCodeForToken,
-  type OAuthLoginRequest
+  type OAuthLoginRequest,
 } from "../utils/github/authFlow";
 
 const OAUTH_VERIFIER_KEY = "oauth_verifier";
@@ -11,8 +11,9 @@ const OAUTH_STATE_KEY = "oauth_state";
 
 export async function startOAuthLogin(
   input: CreateOAuthLoginRequestInput,
-  createLoginRequest: (input: CreateOAuthLoginRequestInput) => Promise<OAuthLoginRequest> =
-    createOAuthLoginRequest
+  createLoginRequest: (
+    input: CreateOAuthLoginRequestInput
+  ) => Promise<OAuthLoginRequest> = createOAuthLoginRequest
 ): Promise<string> {
   const request = await createLoginRequest(input);
 
@@ -49,7 +50,7 @@ export async function completeOAuthLogin(
     codeVerifier: verifier,
     exchangeCodeForToken: async () => {
       throw new Error("exchangeCodeForToken must be wired by caller");
-    }
+    },
   });
 
   clearOAuthSession();
@@ -65,6 +66,6 @@ export function clearOAuthSession(): void {
 export function getOAuthSessionKeys() {
   return {
     verifierKey: OAUTH_VERIFIER_KEY,
-    stateKey: OAUTH_STATE_KEY
+    stateKey: OAUTH_STATE_KEY,
   };
 }

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { generateCodeChallenge, generateCodeVerifier } from "../../src/utils/crypto/pkce";
+import {
+  generateCodeChallenge,
+  generateCodeVerifier,
+} from "../../src/utils/crypto/pkce";
 
 describe("PKCE", () => {
   it("generates a verifier with the expected length and charset", async () => {

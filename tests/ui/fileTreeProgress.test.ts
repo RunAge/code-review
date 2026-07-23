@@ -7,12 +7,12 @@ describe("fileTreeProgress", () => {
     const result = buildFileTreeProgress([
       { filePath: "src/a.ts", isViewed: true },
       { filePath: "src/a.ts", isViewed: false },
-      { filePath: "src/b.ts", isViewed: true }
+      { filePath: "src/b.ts", isViewed: true },
     ]);
 
     expect(result).toEqual([
       { filePath: "src/a.ts", reviewed: 1, total: 2 },
-      { filePath: "src/b.ts", reviewed: 1, total: 1 }
+      { filePath: "src/b.ts", reviewed: 1, total: 1 },
     ]);
   });
 });

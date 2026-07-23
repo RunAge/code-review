@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyAiNoise, shouldCollapseHunk } from "../../src/filters/aiNoiseFilter";
+import {
+  classifyAiNoise,
+  shouldCollapseHunk,
+} from "../../src/filters/aiNoiseFilter";
 
 describe("aiNoiseFilter", () => {
   it("classifies generated and lock files as noise", () => {
@@ -11,20 +14,11 @@ describe("aiNoiseFilter", () => {
   });
 
   it("collapses pure import reorder or formatting hunks", () => {
-    const importOnly = [
-      "-import { b } from './b'",
-      "+import { b } from \"./b\""
-    ];
+    const importOnly = ["-import { b } from './b'", '+import { b } from "./b"'];
 
-    const formattingOnly = [
-      "-  return a+b;",
-      "+  return a + b;"
-    ];
+    const formattingOnly = ["-  return a+b;", "+  return a + b;"];
 
-    const logicChange = [
-      "-  return a + b;",
-      "+  return a + b + 1;"
-    ];
+    const logicChange = ["-  return a + b;", "+  return a + b + 1;"];
 
     expect(shouldCollapseHunk(importOnly)).toBe(true);
     expect(shouldCollapseHunk(formattingOnly)).toBe(true);

@@ -10,22 +10,22 @@ describe("comment mapper", () => {
         path: "src/a.ts",
         line: 10,
         body: "Please rename this",
-        user: { login: "alice", type: "User" }
+        user: { login: "alice", type: "User" },
       },
       {
         id: 2,
         path: "src/a.ts",
         line: 10,
         body: "Done",
-        user: { login: "bot-ai", type: "Bot" }
+        user: { login: "bot-ai", type: "Bot" },
       },
       {
         id: 3,
         path: "src/b.ts",
         line: 3,
         body: "Looks good",
-        user: { login: "bob", type: "User" }
-      }
+        user: { login: "bob", type: "User" },
+      },
     ]);
 
     expect(Object.keys(mapped)).toEqual(["src/a.ts", "src/b.ts"]);

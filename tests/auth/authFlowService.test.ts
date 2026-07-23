@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createOAuthLoginRequest,
   finishOAuthCallback,
-  type ExchangeCodeForToken
+  type ExchangeCodeForToken,
 } from "../../src/utils/github/authFlow";
 
 describe("authFlow service", () => {
@@ -11,32 +11,39 @@ describe("authFlow service", () => {
     const request = await createOAuthLoginRequest({
       clientId: "client_123",
       redirectUri: "http://localhost:3000/auth/callback",
-      scope: "repo"
+      scope: "repo",
     });
 
     expect(request.verifier).toHaveLength(128);
     expect(request.state.length).toBeGreaterThanOrEqual(32);
-    expect(request.authorizeUrl.searchParams.get("client_id")).toBe("client_123");
-    expect(request.authorizeUrl.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(request.authorizeUrl.searchParams.get("client_id")).toBe(
+      "client_123"
+    );
+    expect(request.authorizeUrl.searchParams.get("code_challenge_method")).toBe(
+      "S256"
+    );
     expect(request.authorizeUrl.searchParams.get("state")).toBe(request.state);
   });
 
   it("finishes OAuth callback and returns access token", async () => {
-    const exchangeCodeForToken: ExchangeCodeForToken = vi.fn().mockResolvedValue("gho_token");
+    const exchangeCodeForToken: ExchangeCodeForToken = vi
+      .fn()
+      .mockResolvedValue("gho_token");
 
     const token = await finishOAuthCallback({
-      callbackUrl: "http://localhost:3000/auth/callback?code=code123&state=state123",
+      callbackUrl:
+        "http://localhost:3000/auth/callback?code=code123&state=state123",
       expectedState: "state123",
       clientId: "client_123",
       codeVerifier: "verifier_abc",
-      exchangeCodeForToken
+      exchangeCodeForToken,
     });
 
     expect(token).toBe("gho_token");
     expect(exchangeCodeForToken).toHaveBeenCalledWith({
       clientId: "client_123",
       code: "code123",
-      codeVerifier: "verifier_abc"
+      codeVerifier: "verifier_abc",
     });
   });
 
@@ -49,7 +56,7 @@ describe("authFlow service", () => {
         expectedState: "state123",
         clientId: "client_123",
         codeVerifier: "verifier_abc",
-        exchangeCodeForToken
+        exchangeCodeForToken,
       })
     ).rejects.toThrow("OAuth authorization failed: access_denied");
   });
@@ -59,11 +66,12 @@ describe("authFlow service", () => {
 
     await expect(
       finishOAuthCallback({
-        callbackUrl: "http://localhost:3000/auth/callback?code=code123&state=other",
+        callbackUrl:
+          "http://localhost:3000/auth/callback?code=code123&state=other",
         expectedState: "state123",
         clientId: "client_123",
         codeVerifier: "verifier_abc",
-        exchangeCodeForToken
+        exchangeCodeForToken,
       })
     ).rejects.toThrow("Invalid OAuth state");
   });

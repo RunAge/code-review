@@ -11,7 +11,10 @@ interface ReviewState {
   activeIndex: number;
 }
 
-function findNextUnreadIndex(hunks: ReviewHunkState[], fromIndex: number): number {
+function findNextUnreadIndex(
+  hunks: ReviewHunkState[],
+  fromIndex: number
+): number {
   for (let index = fromIndex + 1; index < hunks.length; index += 1) {
     if (!hunks[index].isViewed) {
       return index;
@@ -21,7 +24,10 @@ function findNextUnreadIndex(hunks: ReviewHunkState[], fromIndex: number): numbe
   return fromIndex;
 }
 
-function findPreviousUnreadIndex(hunks: ReviewHunkState[], fromIndex: number): number {
+function findPreviousUnreadIndex(
+  hunks: ReviewHunkState[],
+  fromIndex: number
+): number {
   for (let index = fromIndex - 1; index >= 0; index -= 1) {
     if (!hunks[index].isViewed) {
       return index;
@@ -34,7 +40,7 @@ function findPreviousUnreadIndex(hunks: ReviewHunkState[], fromIndex: number): n
 export const useReviewStore = defineStore("review", {
   state: (): ReviewState => ({
     hunks: [],
-    activeIndex: 0
+    activeIndex: 0,
   }),
   actions: {
     setHunks(hunks: ReviewHunkState[]) {
@@ -54,6 +60,6 @@ export const useReviewStore = defineStore("review", {
       }
 
       active.isViewed = !active.isViewed;
-    }
-  }
+    },
+  },
 });

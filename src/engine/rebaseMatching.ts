@@ -13,6 +13,6 @@ export function matchViewedHunksAfterRebase(input: {
 }): RebasedHunkState[] {
   return input.newDiffHunks.map((hunk) => ({
     ...hunk,
-    isViewed: input.viewedPatchIds.has(hunk.patchId)
+    isViewed: input.viewedPatchIds.has(hunk.patchId),
   }));
 }

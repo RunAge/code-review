@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { clearToken, getToken, setToken } from "../../src/utils/storage/tokenStorage";
+import {
+  clearToken,
+  getToken,
+  setToken,
+} from "../../src/utils/storage/tokenStorage";
 
 describe("tokenStorage", () => {
   beforeEach(() => {

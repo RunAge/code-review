@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearOAuthSession,
   completeOAuthLogin,
-  startOAuthLogin
+  startOAuthLogin,
 } from "../../src/composables/oauthSession";
 
 describe("oauthSession", () => {
@@ -15,7 +15,7 @@ describe("oauthSession", () => {
     const loginRequest = {
       authorizeUrl: new URL("https://github.com/login/oauth/authorize?x=1"),
       verifier: "verifier_1",
-      state: "state_1"
+      state: "state_1",
     };
 
     const createOAuthLoginRequest = vi.fn().mockResolvedValue(loginRequest);
@@ -24,7 +24,7 @@ describe("oauthSession", () => {
       {
         clientId: "client",
         redirectUri: "http://localhost:3000/auth/callback",
-        scope: "repo"
+        scope: "repo",
       },
       createOAuthLoginRequest
     );
@@ -42,8 +42,9 @@ describe("oauthSession", () => {
 
     const token = await completeOAuthLogin(
       {
-        callbackUrl: "http://localhost:3000/auth/callback?code=c1&state=state_1",
-        clientId: "client_1"
+        callbackUrl:
+          "http://localhost:3000/auth/callback?code=c1&state=state_1",
+        clientId: "client_1",
       },
       finishOAuthCallback
     );
@@ -59,8 +60,9 @@ describe("oauthSession", () => {
     await expect(
       completeOAuthLogin(
         {
-          callbackUrl: "http://localhost:3000/auth/callback?code=c1&state=state_1",
-          clientId: "client_1"
+          callbackUrl:
+            "http://localhost:3000/auth/callback?code=c1&state=state_1",
+          clientId: "client_1",
         },
         finishOAuthCallback
       )

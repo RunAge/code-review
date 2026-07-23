@@ -9,12 +9,12 @@ describe("rebase matching", () => {
     const newDiffHunks = [
       { filePath: "src/a.ts", patchId: "hash_a" },
       { filePath: "src/a.ts", patchId: "hash_b" },
-      { filePath: "src/c.ts", patchId: "hash_c" }
+      { filePath: "src/c.ts", patchId: "hash_c" },
     ];
 
     const result = matchViewedHunksAfterRebase({
       viewedPatchIds,
-      newDiffHunks
+      newDiffHunks,
     });
 
     expect(result.map((item) => item.isViewed)).toEqual([true, false, true]);

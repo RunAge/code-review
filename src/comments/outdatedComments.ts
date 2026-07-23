@@ -43,7 +43,7 @@ export function remapOutdatedComments(
       ...comment,
       path: target.filePath,
       line: target.startLine,
-      outdated: false
+      outdated: false,
     });
   }
 

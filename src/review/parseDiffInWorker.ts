@@ -12,11 +12,18 @@ export interface ParsedFileFromWorker {
   hunks: ParsedHunkFromWorker[];
 }
 
-export async function parseDiffInWorker(diff: string): Promise<ParsedFileFromWorker[]> {
+export async function parseDiffInWorker(
+  diff: string
+): Promise<ParsedFileFromWorker[]> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL("../workers/diff/worker.ts", import.meta.url), { type: "module" });
+    const worker = new Worker(
+      new URL("../workers/diff/worker.ts", import.meta.url),
+      { type: "module" }
+    );
 
-    worker.onmessage = (event: MessageEvent<{ files: ParsedFileFromWorker[] }>) => {
+    worker.onmessage = (
+      event: MessageEvent<{ files: ParsedFileFromWorker[] }>
+    ) => {
       worker.terminate();
       resolve(event.data.files);
     };

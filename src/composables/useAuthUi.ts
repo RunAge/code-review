@@ -1,7 +1,11 @@
 import { useAuthStore } from "../stores/authStore";
 import { finishOAuthCallback } from "../utils/github/authFlow";
 import { exchangeCodeForToken } from "../utils/github/tokenExchange";
-import { clearOAuthSession, getOAuthSessionKeys, startOAuthLogin } from "./oauthSession";
+import {
+  clearOAuthSession,
+  getOAuthSessionKeys,
+  startOAuthLogin,
+} from "./oauthSession";
 
 function getPublicConfig() {
   if (typeof useRuntimeConfig === "function") {
@@ -12,7 +16,7 @@ function getPublicConfig() {
   return {
     githubClientId: "",
     githubRedirectUri: "",
-    githubTokenExchangeUrl: ""
+    githubTokenExchangeUrl: "",
   };
 }
 
@@ -25,7 +29,7 @@ export function useAuthUi() {
     const url = await startOAuthLogin({
       clientId: config.githubClientId,
       redirectUri: config.githubRedirectUri,
-      scope: "repo pull_request:write"
+      scope: "repo pull_request:write",
     });
 
     if (typeof window !== "undefined") {
@@ -58,8 +62,8 @@ export function useAuthUi() {
           code,
           codeVerifier,
           redirectUri: config.githubRedirectUri,
-          tokenExchangeUrl: config.githubTokenExchangeUrl
-        })
+          tokenExchangeUrl: config.githubTokenExchangeUrl,
+        }),
     });
 
     store.setPatToken(token);
@@ -73,6 +77,6 @@ export function useAuthUi() {
   return {
     beginOAuthLogin,
     finishOAuthFromCurrentLocation,
-    setPatToken
+    setPatToken,
   };
 }

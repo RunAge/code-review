@@ -28,7 +28,7 @@ export function assembleReviewData(input: {
       patchId: hunk.patchId,
       header: hunk.header,
       lines: hunk.lines,
-      isViewed: input.viewedPatchIds.has(hunk.patchId)
+      isViewed: input.viewedPatchIds.has(hunk.patchId),
     }))
   );
 

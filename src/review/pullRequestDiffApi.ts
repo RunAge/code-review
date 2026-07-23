@@ -12,8 +12,8 @@ export async function fetchPullRequestDiff(
     `https://api.github.com/repos/${pullRequest.owner}/${pullRequest.repo}/pulls/${pullRequest.pullNumber}`,
     {
       headers: {
-        Accept: "application/vnd.github.v3.diff"
-      }
+        Accept: "application/vnd.github.v3.diff",
+      },
     }
   );
 

@@ -11,9 +11,14 @@ export interface GitHubReviewComment {
   user: GitHubCommentUser;
 }
 
-export type FileCommentTree<T extends { path: string; line: number }> = Record<string, Record<number, T[]>>;
+export type FileCommentTree<T extends { path: string; line: number }> = Record<
+  string,
+  Record<number, T[]>
+>;
 
-export function mapCommentsToFileTree<T extends { path: string; line: number }>(comments: T[]): FileCommentTree<T> {
+export function mapCommentsToFileTree<T extends { path: string; line: number }>(
+  comments: T[]
+): FileCommentTree<T> {
   const tree: FileCommentTree<T> = {};
 
   for (const comment of comments) {

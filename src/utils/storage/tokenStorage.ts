@@ -20,7 +20,7 @@ function getStorage(): StorageLike {
     getItem: (key: string) => memoryStorage.get(key) ?? null,
     removeItem: (key: string) => {
       memoryStorage.delete(key);
-    }
+    },
   };
 }
 

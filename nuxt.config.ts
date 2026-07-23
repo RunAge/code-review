@@ -1,8 +1,13 @@
 import { defineNuxtConfig } from "nuxt/config";
 
+const appBaseUrl = process.env.NUXT_APP_BASE_URL ?? (process.env.NODE_ENV === "production" ? "/code-review/" : "/");
+
 export default defineNuxtConfig({
   ssr: false,
   srcDir: "src/",
+  app: {
+    baseURL: appBaseUrl
+  },
   runtimeConfig: {
     public: {
       githubClientId: process.env.NUXT_PUBLIC_GITHUB_CLIENT_ID ?? "",

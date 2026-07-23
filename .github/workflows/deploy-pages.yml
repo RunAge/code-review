@@ -19,8 +19,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      NUXT_APP_BASE_URL: ${{ vars.NUXT_APP_BASE_URL != '' && vars.NUXT_APP_BASE_URL || format('/{0}/', github.event.repository.name) }}
       NUXT_PUBLIC_GITHUB_CLIENT_ID: ${{ vars.NUXT_PUBLIC_GITHUB_CLIENT_ID }}
-      NUXT_PUBLIC_GITHUB_REDIRECT_URI: ${{ vars.NUXT_PUBLIC_GITHUB_REDIRECT_URI != '' && vars.NUXT_PUBLIC_GITHUB_REDIRECT_URI || format('https://{0}.github.io/{1}/auth/callback', github.repository_owner, github.event.repository.name) }}
+      NUXT_PUBLIC_GITHUB_REDIRECT_URI: ${{ vars.NUXT_PUBLIC_GITHUB_REDIRECT_URI != '' && vars.NUXT_PUBLIC_GITHUB_REDIRECT_URI || format('https://{0}/{1}/auth/callback', github.pages_url, github.event.repository.name) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -1,4 +1,10 @@
-import { defineComponent, h, type PropType } from "vue";
+import {
+  defineComponent,
+  h,
+  onBeforeUnmount,
+  onMounted,
+  type PropType,
+} from "vue";
 
 interface DiffLine {
   type: "added" | "removed" | "context";
@@ -25,27 +31,30 @@ type InlineCommentTree = Record<string, Record<number, InlineComment[]>>;
 export default defineComponent({
   name: "DiffView",
   emits: {
-    "comment-line": (payload: { lineNumber: number; startLine?: number; anchorId?: string }) =>
-      typeof payload?.lineNumber === "number"
+    "comment-line": (payload: {
+      lineNumber: number;
+      startLine?: number;
+      anchorId?: string;
+    }) => typeof payload?.lineNumber === "number",
   },
   props: {
     mode: {
       type: String as PropType<"unified" | "split">,
-      required: true
+      required: true,
     },
     hunks: {
       type: Array as PropType<DiffHunk[]>,
-      required: true
+      required: true,
     },
     filePath: {
       type: String,
       required: false,
-      default: ""
+      default: "",
     },
     commentsTree: {
       type: Object as PropType<InlineCommentTree>,
       required: false,
-      default: () => ({})
+      default: () => ({}),
     },
     inlineCommentDraft: {
       type: Object as PropType<{
@@ -54,19 +63,76 @@ export default defineComponent({
         anchorId?: string;
       } | null>,
       required: false,
-      default: null
-    }
+      default: null,
+    },
   },
   setup(props, { emit }) {
     let isSelectingRange = false;
     let dragStartLine: number | null = null;
 
-    if (typeof window !== "undefined") {
-      window.addEventListener("mouseup", () => {
-        isSelectingRange = false;
-        dragStartLine = null;
+    function emitRangeForPoint(clientX: number, clientY: number) {
+      if (typeof document === "undefined") {
+        return;
+      }
+
+      const target = document.elementFromPoint(
+        clientX,
+        clientY
+      ) as HTMLElement | null;
+      const lineElement = target?.closest(
+        "[data-line-number]"
+      ) as HTMLElement | null;
+      if (!lineElement) {
+        return;
+      }
+
+      const lineAttr = lineElement.getAttribute("data-line-number");
+      if (!lineAttr) {
+        return;
+      }
+
+      const lineNumber = Number.parseInt(lineAttr, 10);
+      if (!Number.isFinite(lineNumber)) {
+        return;
+      }
+
+      emit("comment-line", {
+        lineNumber,
+        startLine: dragStartLine ?? lineNumber,
+        anchorId: lineElement.getAttribute("data-anchor-id") ?? undefined,
       });
     }
+
+    function handleWindowMouseMove(event: MouseEvent) {
+      if (!isSelectingRange) {
+        return;
+      }
+
+      emitRangeForPoint(event.clientX, event.clientY);
+    }
+
+    function handleWindowMouseUp() {
+      isSelectingRange = false;
+      dragStartLine = null;
+    }
+
+    onMounted(() => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      window.addEventListener("mousemove", handleWindowMouseMove);
+      window.addEventListener("mouseup", handleWindowMouseUp);
+    });
+
+    onBeforeUnmount(() => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      window.removeEventListener("mousemove", handleWindowMouseMove);
+      window.removeEventListener("mouseup", handleWindowMouseUp);
+    });
 
     function lineClass(type: DiffLine["type"]): string {
       if (type === "added") {
@@ -85,22 +151,35 @@ export default defineComponent({
         return [];
       }
 
-      const comments = props.commentsTree[props.filePath]?.[line.newLineNumber] ?? [];
+      const comments =
+        props.commentsTree[props.filePath]?.[line.newLineNumber] ?? [];
 
       return comments.map((comment) =>
         h(
           "div",
           {
-            class: "my-1 rounded-lg border border-ink/20 bg-[#313244] px-3 py-2 text-xs",
-            key: `${props.filePath}-${line.newLineNumber}-${comment.id}`
+            class:
+              "my-1 rounded-lg border border-ink/20 bg-[#313244] px-3 py-2 text-xs",
+            key: `${props.filePath}-${line.newLineNumber}-${comment.id}`,
           },
           [
             h(
               "small",
-              { class: "font-semibold uppercase tracking-[0.12em] text-ink/55" },
-              `${comment.authorType}${comment.isResolved ? " · resolved" : " · unresolved"}`
+              {
+                class: "font-semibold uppercase tracking-[0.12em] text-ink/55",
+              },
+              `${comment.authorType}${
+                comment.isResolved ? " · resolved" : " · unresolved"
+              }`
             ),
-            h("p", { class: "mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/85" }, comment.body)
+            h(
+              "p",
+              {
+                class:
+                  "mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/85",
+              },
+              comment.body
+            ),
           ]
         )
       );
@@ -110,8 +189,9 @@ export default defineComponent({
       return h(
         "h3",
         {
-          class: "mb-2 mt-3 rounded-lg border border-ink/20 bg-[#313244] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-ink/75",
-          key: `${patchId}${suffix}-header`
+          class:
+            "mb-2 mt-3 rounded-lg border border-ink/20 bg-[#313244] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-ink/75",
+          key: `${patchId}${suffix}-header`,
         },
         header
       );
@@ -120,7 +200,7 @@ export default defineComponent({
     function normalizeRange(startLine: number, lineNumber: number) {
       return {
         startLine: Math.min(startLine, lineNumber),
-        endLine: Math.max(startLine, lineNumber)
+        endLine: Math.max(startLine, lineNumber),
       };
     }
 
@@ -128,111 +208,170 @@ export default defineComponent({
       return props.inlineCommentDraft?.anchorId === anchorId;
     }
 
-    function renderLine(patchId: string, line: DiffLine, index: number, suffix = "") {
+    function renderLine(
+      patchId: string,
+      line: DiffLine,
+      index: number,
+      suffix = ""
+    ) {
       const lineKey = `${patchId}${suffix}-${index}`;
       const anchorId = `inline-anchor-${lineKey}`;
       const canComment = typeof line.newLineNumber === "number";
       const lineNumber = canComment ? (line.newLineNumber as number) : null;
-      const isRangeMode = typeof props.inlineCommentDraft?.startLine === "number";
+      const isRangeMode =
+        typeof props.inlineCommentDraft?.startLine === "number";
 
       let inDraftRange = false;
       if (lineNumber !== null && props.inlineCommentDraft) {
-        const start = props.inlineCommentDraft.startLine ?? props.inlineCommentDraft.line;
+        const start =
+          props.inlineCommentDraft.startLine ?? props.inlineCommentDraft.line;
         const range = normalizeRange(start, props.inlineCommentDraft.line);
-        inDraftRange = lineNumber >= range.startLine && lineNumber <= range.endLine;
+        inDraftRange =
+          lineNumber >= range.startLine && lineNumber <= range.endLine;
       }
 
-      const row = h("div", { class: "group mb-1 flex items-start gap-2", key: lineKey }, [
-        h(
-          "pre",
-          {
-            class: `min-w-0 flex-1 overflow-x-auto rounded-md px-3 py-1.5 font-mono text-[12px] leading-relaxed ${lineClass(line.type)} ${inDraftRange ? "ring-1 ring-flare/60" : ""}`,
-            "data-line-number": lineNumber ?? undefined,
-            onMouseDown: canComment
-              ? (event: MouseEvent) => {
-                  event.preventDefault();
+      const row = h(
+        "div",
+        { class: "group mb-1 flex items-start gap-2", key: lineKey },
+        [
+          h(
+            "pre",
+            {
+              class: `min-w-0 flex-1 overflow-x-auto rounded-md px-3 py-1.5 font-mono text-[12px] leading-relaxed ${lineClass(
+                line.type
+              )} ${inDraftRange ? "ring-1 ring-flare/60" : ""}`,
+              "data-line-number": lineNumber ?? undefined,
+              "data-anchor-id": anchorId,
+              onMouseDown: canComment
+                ? (event: MouseEvent) => {
+                    event.preventDefault();
 
-                  isSelectingRange = true;
-                  dragStartLine = lineNumber as number;
+                    isSelectingRange = true;
+                    dragStartLine = lineNumber as number;
 
-                  if (event.shiftKey && props.inlineCommentDraft && typeof props.inlineCommentDraft.line === "number") {
+                    if (
+                      event.shiftKey &&
+                      props.inlineCommentDraft &&
+                      typeof props.inlineCommentDraft.line === "number"
+                    ) {
+                      emit("comment-line", {
+                        lineNumber: lineNumber as number,
+                        startLine: props.inlineCommentDraft.line,
+                        anchorId,
+                      });
+                      return;
+                    }
+
                     emit("comment-line", {
                       lineNumber: lineNumber as number,
-                      startLine: props.inlineCommentDraft.line,
-                      anchorId
+                      anchorId,
                     });
-                    return;
                   }
+                : undefined,
+              onMouseEnter: canComment
+                ? (event: MouseEvent) => {
+                    if (
+                      !isSelectingRange ||
+                      !props.inlineCommentDraft ||
+                      !isRangeMode
+                    ) {
+                      return;
+                    }
 
-                  emit("comment-line", { lineNumber: lineNumber as number, anchorId });
-                }
-              : undefined,
-            onMouseEnter: canComment
-              ? (event: MouseEvent) => {
-                  if (!isSelectingRange || !props.inlineCommentDraft || !isRangeMode) {
-                    return;
+                    emitRangeForPoint(event.clientX, event.clientY);
                   }
+                : undefined,
+            },
+            line.content
+          ),
+          canComment
+            ? h(
+                "button",
+                {
+                  class:
+                    "mt-1 hidden rounded-md border border-ink/30 bg-[#313244] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink/85 transition hover:border-flare/60 hover:text-flare group-hover:inline-block",
+                  type: "button",
+                  onClick: () =>
+                    emit("comment-line", {
+                      lineNumber: line.newLineNumber as number,
+                      startLine: line.newLineNumber as number,
+                      anchorId,
+                    }),
+                },
+                "+ Comment"
+              )
+            : null,
+        ]
+      );
 
-                  emit("comment-line", {
-                    lineNumber: lineNumber as number,
-                    startLine: dragStartLine ?? props.inlineCommentDraft.startLine,
-                    anchorId
-                  });
-                }
-              : undefined
-          },
-          line.content
-        ),
-        canComment
-          ? h(
-              "button",
-              {
-                class:
-                  "mt-1 hidden rounded-md border border-ink/30 bg-[#313244] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink/85 transition hover:border-flare/60 hover:text-flare group-hover:inline-block",
-                type: "button",
-                onClick: () =>
-                  emit("comment-line", {
-                    lineNumber: line.newLineNumber as number,
-                    startLine: line.newLineNumber as number,
-                    anchorId
-                  })
-              },
-              "+ Comment"
-            )
-          : null
-      ]);
-
-      return [row, shouldShowDraftBelow(anchorId) ? h("div", { id: anchorId }) : null];
+      return [
+        row,
+        shouldShowDraftBelow(anchorId) ? h("div", { id: anchorId }) : null,
+      ];
     }
 
     return () => {
       if (props.mode === "split") {
-        return h("section", { class: "grid gap-4 lg:grid-cols-2", "data-testid": "mode-split" }, [
-          h("div", { class: "rounded-xl border border-ink/20 bg-[#181825] p-3", "data-testid": "split-left" }, [
-            ...props.hunks.flatMap((hunk) => [
-              renderHunkHeader(hunk.patchId, hunk.header, "-left"),
-              ...hunk.lines
-                .filter((line) => line.type !== "added")
-                .flatMap((line, index) => [...renderLine(hunk.patchId, line, index, "-left"), ...renderInlineComments(line)])
-            ])
-          ]),
-          h("div", { class: "rounded-xl border border-ink/20 bg-[#181825] p-3", "data-testid": "split-right" }, [
-            ...props.hunks.flatMap((hunk) => [
-              renderHunkHeader(hunk.patchId, hunk.header, "-right"),
-              ...hunk.lines
-                .filter((line) => line.type !== "removed")
-                .flatMap((line, index) => [...renderLine(hunk.patchId, line, index, "-right"), ...renderInlineComments(line)])
-            ])
-          ])
-        ]);
+        return h(
+          "section",
+          { class: "grid gap-4 lg:grid-cols-2", "data-testid": "mode-split" },
+          [
+            h(
+              "div",
+              {
+                class: "rounded-xl border border-ink/20 bg-[#181825] p-3",
+                "data-testid": "split-left",
+              },
+              [
+                ...props.hunks.flatMap((hunk) => [
+                  renderHunkHeader(hunk.patchId, hunk.header, "-left"),
+                  ...hunk.lines
+                    .filter((line) => line.type !== "added")
+                    .flatMap((line, index) => [
+                      ...renderLine(hunk.patchId, line, index, "-left"),
+                      ...renderInlineComments(line),
+                    ]),
+                ]),
+              ]
+            ),
+            h(
+              "div",
+              {
+                class: "rounded-xl border border-ink/20 bg-[#181825] p-3",
+                "data-testid": "split-right",
+              },
+              [
+                ...props.hunks.flatMap((hunk) => [
+                  renderHunkHeader(hunk.patchId, hunk.header, "-right"),
+                  ...hunk.lines
+                    .filter((line) => line.type !== "removed")
+                    .flatMap((line, index) => [
+                      ...renderLine(hunk.patchId, line, index, "-right"),
+                      ...renderInlineComments(line),
+                    ]),
+                ]),
+              ]
+            ),
+          ]
+        );
       }
 
-      return h("section", { class: "rounded-xl border border-ink/20 bg-[#181825] p-3", "data-testid": "mode-unified" }, [
-        ...props.hunks.flatMap((hunk) => [
-          renderHunkHeader(hunk.patchId, hunk.header),
-          ...hunk.lines.flatMap((line, index) => [...renderLine(hunk.patchId, line, index), ...renderInlineComments(line)])
-        ])
-      ]);
+      return h(
+        "section",
+        {
+          class: "rounded-xl border border-ink/20 bg-[#181825] p-3",
+          "data-testid": "mode-unified",
+        },
+        [
+          ...props.hunks.flatMap((hunk) => [
+            renderHunkHeader(hunk.patchId, hunk.header),
+            ...hunk.lines.flatMap((line, index) => [
+              ...renderLine(hunk.patchId, line, index),
+              ...renderInlineComments(line),
+            ]),
+          ]),
+        ]
+      );
     };
-  }
+  },
 });

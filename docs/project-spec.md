@@ -10,7 +10,7 @@ Stworzenie bezserwerowego (Client-Side SPA) narzędzia do wyspecjalizowanego Cod
 
 - **Hosting:** GitHub Pages (statyczny build Nuxt 3 SPA).
 
-- **Zero Backend Storage:** Wszystkie dane przeglądania, tokeny i hashe żyją wyłącznie w przeglądarce użytkownika (`IndexedDB`).
+- **Zero Backend Storage:** Wszystkie dane przeglądania, tokeny, hashe i drafty komentarzy żyją wyłącznie w przeglądarce użytkownika (`IndexedDB`).
 
 - **Autoryzacja:** GitHub OAuth 2.0 z przepływem PKCE (Client-Side) lub zapasowo Personal Access Token (PAT).
 
@@ -27,6 +27,8 @@ Stworzenie bezserwerowego (Client-Side SPA) narzędzia do wyspecjalizowanego Cod
 - **Testy (TDD):** **Vitest** (testy jednostkowe i logiki biznesowej) + **Vue Test Utils** + **Playwright** (testy E2E / integracyjne).
 - **Worker:** Web Workers (dla ciężkich operacji parsujących i wyliczania hashy).
 
+- **Środowisko testowe PR:** W repo powinien istnieć lekki zestaw zmian do ręcznego testowania UI review (inline comment, range comment, suggestion).
+
 ---
 
 ## 3. Żelazna Zasada: Test-Driven Development (TDD)
@@ -36,6 +38,17 @@ Stworzenie bezserwerowego (Client-Side SPA) narzędzia do wyspecjalizowanego Cod
 ---
 
 ## 4. Fazy Wdrożenia Projektu
+
+### Dodatek: Testowy Pull Request (Sandbox)
+
+W celu walidacji narzędzia review poza testami automatycznymi, utrzymuj jedną testową gałąź PR z kontrolowanymi zmianami w katalogu `docs/test-pr-fixture/`.
+
+Zakres testów manualnych na sandbox PR:
+
+- pojedynczy komentarz do linii,
+- komentarz do zakresu linii,
+- komentarz z blokiem suggestion,
+- submit review typu `COMMENT` z pending comments.
 
 ### FAZA 1: Inicjalizacja Projektu, Środowisko TDD i Autoryzacja OAuth PKCE
 

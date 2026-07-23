@@ -15,18 +15,19 @@ export async function exchangeCodeForToken(
   input: ExchangeCodeForTokenInput,
   fetchImpl: typeof fetch = fetch
 ): Promise<string> {
+  const form = new URLSearchParams({
+    client_id: input.clientId,
+    code: input.code,
+    code_verifier: input.codeVerifier,
+    redirect_uri: input.redirectUri
+  });
+
   const response = await fetchImpl("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
+      Accept: "application/json"
     },
-    body: JSON.stringify({
-      client_id: input.clientId,
-      code: input.code,
-      code_verifier: input.codeVerifier,
-      redirect_uri: input.redirectUri
-    })
+    body: form
   });
 
   const payload = (await response.json()) as GitHubTokenResponse;

@@ -27,6 +27,12 @@ describe("exchangeCodeForToken", () => {
     expect(url).toBe("https://github.com/login/oauth/access_token");
     expect(init.method).toBe("POST");
     expect(new Headers(init.headers).get("Accept")).toBe("application/json");
+    expect(new Headers(init.headers).get("Content-Type")).toBeNull();
+    const body = init.body as URLSearchParams;
+    expect(body.get("client_id")).toBe("client_1");
+    expect(body.get("code")).toBe("code_1");
+    expect(body.get("code_verifier")).toBe("verifier_1");
+    expect(body.get("redirect_uri")).toBe("http://localhost:3000/auth/callback");
   });
 
   it("throws when API responds without access token", async () => {

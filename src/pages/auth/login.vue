@@ -1,7 +1,10 @@
 <template>
   <section>
     <h1>Sign in to GitHub</h1>
-    <p>Use OAuth PKCE by default, or provide a PAT for local development.</p>
+    <p>
+      Use OAuth PKCE when backend token exchange is available, or provide a PAT for static deployments
+      like GitHub Pages.
+    </p>
 
     <button type="button" @click="onOAuthLogin">Continue with GitHub OAuth</button>
 

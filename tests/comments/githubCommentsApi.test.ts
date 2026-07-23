@@ -120,4 +120,70 @@ describe("github comments api", () => {
       )
     ).rejects.toThrow("GitHub review submission failed with status 422");
   });
+
+  it("falls back to COMMENT then decision when 422 occurs with inline comments", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Validation Failed" }), {
+          status: 422,
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    await submitPullRequestReview(
+      {
+        owner: "acme",
+        repo: "tool",
+        pullNumber: 12,
+        event: "REQUEST_CHANGES",
+        body: "Please update this.",
+        comments: [
+          {
+            path: "src/a.ts",
+            startLine: 10,
+            line: 12,
+            body: "nit"
+          }
+        ]
+      },
+      fetchMock as unknown as typeof fetch
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const firstPayload = JSON.parse(String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body));
+    const secondPayload = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body));
+    const thirdPayload = JSON.parse(String((fetchMock.mock.calls[2] as [string, RequestInit])[1].body));
+
+    expect(firstPayload.event).toBe("REQUEST_CHANGES");
+    expect(firstPayload.comments).toHaveLength(1);
+    expect(secondPayload.event).toBe("COMMENT");
+    expect(secondPayload.comments).toHaveLength(1);
+    expect(thirdPayload.event).toBe("REQUEST_CHANGES");
+    expect(thirdPayload.comments).toBeUndefined();
+  });
+
+  it("includes API message in submission error when available", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: "Review comments is invalid" }), {
+        status: 422,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    await expect(
+      submitPullRequestReview(
+        {
+          owner: "acme",
+          repo: "tool",
+          pullNumber: 12,
+          event: "COMMENT",
+          body: "Test"
+        },
+        fetchMock as unknown as typeof fetch
+      )
+    ).rejects.toThrow("GitHub review submission failed with status 422: Review comments is invalid");
+  });
 });

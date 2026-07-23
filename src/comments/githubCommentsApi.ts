@@ -35,6 +35,10 @@ interface InlineCommentSubmitInput extends RepoRef {
   body: string;
 }
 
+interface GitHubApiErrorPayload {
+  message?: string;
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     throw new Error(`GitHub API request failed with status ${response.status}`);
@@ -148,31 +152,90 @@ export async function submitPullRequestReview(
     return {
       path: comment.path,
       line: normalizedEndLine,
-      side: "RIGHT",
+      side: "RIGHT" as const,
       start_line: normalizedStartLine,
-      start_side: normalizedStartLine ? "RIGHT" : undefined,
+      start_side: normalizedStartLine ? ("RIGHT" as const) : undefined,
       body: comment.body,
     };
   });
 
-  const response = await fetchImpl(url, {
-    method: "POST",
-    headers: {
-      Accept: "application/vnd.github+json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      event: input.event,
-      body: input.body,
-      comments,
-    }),
+  async function createReview(payload: {
+    event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT";
+    body?: string;
+    comments?: Array<{
+      path: string;
+      line: number;
+      side: "RIGHT";
+      start_line?: number;
+      start_side?: "RIGHT";
+      body: string;
+    }>;
+  }): Promise<Response> {
+    return fetchImpl(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  const primaryResponse = await createReview({
+    event: input.event,
+    body: input.body,
+    comments,
   });
 
-  if (!response.ok) {
+  if (primaryResponse.ok) {
+    return;
+  }
+
+  // GitHub may reject decision events with inline comments in a single request.
+  // Fallback: submit comments as COMMENT review, then submit decision only.
+  if (
+    primaryResponse.status === 422 &&
+    input.event !== "COMMENT" &&
+    comments.length > 0
+  ) {
+    const commentResponse = await createReview({
+      event: "COMMENT",
+      comments,
+    });
+
+    if (!commentResponse.ok) {
+      throw new Error(
+        `GitHub review submission failed with status ${commentResponse.status}`
+      );
+    }
+
+    const decisionResponse = await createReview({
+      event: input.event,
+      body: input.body,
+    });
+
+    if (decisionResponse.ok) {
+      return;
+    }
+
     throw new Error(
-      `GitHub review submission failed with status ${response.status}`
+      `GitHub review submission failed with status ${decisionResponse.status}`
     );
   }
+
+  let extraMessage = "";
+  try {
+    const payload = (await primaryResponse.json()) as GitHubApiErrorPayload;
+    if (payload.message) {
+      extraMessage = `: ${payload.message}`;
+    }
+  } catch {
+    // Ignore parse errors; keep generic status message.
+  }
+
+  throw new Error(
+    `GitHub review submission failed with status ${primaryResponse.status}${extraMessage}`
+  );
 }
 
 export async function submitPullRequestInlineComment(

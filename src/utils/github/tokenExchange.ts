@@ -3,6 +3,7 @@ export interface ExchangeCodeForTokenInput {
   code: string;
   codeVerifier: string;
   redirectUri: string;
+  tokenExchangeUrl?: string;
 }
 
 interface GitHubTokenResponse {
@@ -40,27 +41,49 @@ export async function exchangeCodeForToken(
   input: ExchangeCodeForTokenInput,
   fetchImpl: typeof fetch = fetch
 ): Promise<string> {
-  const form = new URLSearchParams({
-    client_id: input.clientId,
-    code: input.code,
-    code_verifier: input.codeVerifier,
-    redirect_uri: input.redirectUri
-  });
+  const isCustomEndpoint = Boolean(input.tokenExchangeUrl?.trim());
+  const url = input.tokenExchangeUrl?.trim() || "https://github.com/login/oauth/access_token";
 
   try {
-    const response = await fetchImpl("https://github.com/login/oauth/access_token", {
-      method: "POST",
-      headers: {
-        Accept: "application/json"
-      },
-      body: form
-    });
+    let response: Response;
+    if (isCustomEndpoint) {
+      response = await fetchImpl(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          client_id: input.clientId,
+          code: input.code,
+          code_verifier: input.codeVerifier,
+          redirect_uri: input.redirectUri
+        })
+      });
+    } else {
+      const form = new URLSearchParams({
+        client_id: input.clientId,
+        code: input.code,
+        code_verifier: input.codeVerifier,
+        redirect_uri: input.redirectUri
+      });
+
+      response = await fetchImpl(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json"
+        },
+        body: form
+      });
+    }
 
     const rawBody = await response.text();
     const payload = parseGitHubTokenPayload(rawBody);
 
     if (!response.ok || !payload.access_token) {
-      const details = payload.error_description ?? payload.error ?? "missing access token";
+      const details =
+        [payload.error, payload.error_description].filter((part): part is string => Boolean(part)).join(": ") ||
+        "missing access token";
       throw new Error(`GitHub token exchange failed: ${normalizeOAuthError(details)}`);
     }
 
@@ -70,7 +93,7 @@ export async function exchangeCodeForToken(
       throw new Error(
         [
           "GitHub token exchange failed due to browser CORS/network restrictions.",
-          "If this app is hosted as static GitHub Pages, use PAT login or add a backend OAuth exchange endpoint."
+          "If this app is hosted as static GitHub Pages, use PAT login or set NUXT_PUBLIC_GITHUB_TOKEN_EXCHANGE_URL to a backend OAuth exchange endpoint."
         ].join(" ")
       );
     }

@@ -11,7 +11,8 @@ function getPublicConfig() {
 
   return {
     githubClientId: "",
-    githubRedirectUri: ""
+    githubRedirectUri: "",
+    githubTokenExchangeUrl: ""
   };
 }
 
@@ -56,7 +57,8 @@ export function useAuthUi() {
           clientId,
           code,
           codeVerifier,
-          redirectUri: config.githubRedirectUri
+          redirectUri: config.githubRedirectUri,
+          tokenExchangeUrl: config.githubTokenExchangeUrl
         })
     });
 

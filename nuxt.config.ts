@@ -12,7 +12,8 @@ export default defineNuxtConfig({
     public: {
       githubClientId: process.env.NUXT_PUBLIC_GITHUB_CLIENT_ID ?? "",
       githubRedirectUri:
-        process.env.NUXT_PUBLIC_GITHUB_REDIRECT_URI ?? "http://localhost:3000/auth/callback"
+        process.env.NUXT_PUBLIC_GITHUB_REDIRECT_URI ?? "http://localhost:3000/auth/callback",
+      githubTokenExchangeUrl: process.env.NUXT_PUBLIC_GITHUB_TOKEN_EXCHANGE_URL ?? ""
     }
   },
   nitro: {

@@ -58,6 +58,16 @@ export default defineComponent({
     }
   },
   setup(props, { emit }) {
+    let isSelectingRange = false;
+    let dragStartLine: number | null = null;
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("mouseup", () => {
+        isSelectingRange = false;
+        dragStartLine = null;
+      });
+    }
+
     function lineClass(type: DiffLine["type"]): string {
       if (type === "added") {
         return "border-l-2 border-moss/60 bg-moss/15 text-moss";
@@ -140,6 +150,11 @@ export default defineComponent({
             "data-line-number": lineNumber ?? undefined,
             onMouseDown: canComment
               ? (event: MouseEvent) => {
+                  event.preventDefault();
+
+                  isSelectingRange = true;
+                  dragStartLine = lineNumber as number;
+
                   if (event.shiftKey && props.inlineCommentDraft && typeof props.inlineCommentDraft.line === "number") {
                     emit("comment-line", {
                       lineNumber: lineNumber as number,
@@ -154,13 +169,13 @@ export default defineComponent({
               : undefined,
             onMouseEnter: canComment
               ? (event: MouseEvent) => {
-                  if ((event.buttons & 1) !== 1 || !props.inlineCommentDraft || !isRangeMode) {
+                  if (!isSelectingRange || !props.inlineCommentDraft || !isRangeMode) {
                     return;
                   }
 
                   emit("comment-line", {
                     lineNumber: lineNumber as number,
-                    startLine: props.inlineCommentDraft.startLine,
+                    startLine: dragStartLine ?? props.inlineCommentDraft.startLine,
                     anchorId
                   });
                 }

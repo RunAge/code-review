@@ -447,10 +447,20 @@ async function loadReview() {
 }
 
 function startInlineComment(payload: { lineNumber: number; startLine?: number; anchorId?: string }) {
+  const isRangeUpdate =
+    inlineCommentLine.value !== null &&
+    inlineCommentAnchorId.value !== null &&
+    payload.anchorId !== undefined &&
+    payload.startLine !== undefined;
+
   inlineCommentLine.value = payload.lineNumber;
   inlineCommentStartLine.value = payload.startLine ?? payload.lineNumber;
   inlineCommentAnchorId.value = payload.anchorId ?? null;
-  inlineCommentStatus.value = "";
+
+  if (!isRangeUpdate) {
+    inlineCommentBody.value = "";
+    inlineCommentStatus.value = "";
+  }
 }
 
 function cancelInlineComment() {

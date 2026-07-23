@@ -1,5 +1,17 @@
 import type { DiffFile, DiffHunk, DiffLine, ParsedDiff } from "./types";
 
+function parseHunkHeader(header: string): { oldLine: number; newLine: number } {
+  const match = header.match(/^@@\s+-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@/);
+  if (!match) {
+    return { oldLine: 0, newLine: 0 };
+  }
+
+  return {
+    oldLine: Number.parseInt(match[1], 10),
+    newLine: Number.parseInt(match[2], 10)
+  };
+}
+
 function getPathFromDiffToken(token: string): string {
   if (token.startsWith("a/") || token.startsWith("b/")) {
     return token.slice(2);
@@ -34,6 +46,8 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
 
   let currentFile: DiffFile | null = null;
   let currentHunk: DiffHunk | null = null;
+  let oldLine = 0;
+  let newLine = 0;
 
   for (const line of lines) {
     if (line.startsWith("diff --git ")) {
@@ -53,6 +67,9 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
 
     if (line.startsWith("@@")) {
       currentHunk = { header: line, lines: [] };
+      const parsed = parseHunkHeader(line);
+      oldLine = parsed.oldLine;
+      newLine = parsed.newLine;
       currentFile.hunks.push(currentHunk);
       continue;
     }
@@ -63,7 +80,33 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
 
     const parsedLine = createLine(line);
     if (parsedLine) {
-      currentHunk.lines.push(parsedLine);
+      if (parsedLine.type === "removed") {
+        currentHunk.lines.push({
+          ...parsedLine,
+          oldLineNumber: oldLine,
+          newLineNumber: null
+        });
+        oldLine += 1;
+        continue;
+      }
+
+      if (parsedLine.type === "added") {
+        currentHunk.lines.push({
+          ...parsedLine,
+          oldLineNumber: null,
+          newLineNumber: newLine
+        });
+        newLine += 1;
+        continue;
+      }
+
+      currentHunk.lines.push({
+        ...parsedLine,
+        oldLineNumber: oldLine,
+        newLineNumber: newLine
+      });
+      oldLine += 1;
+      newLine += 1;
     }
   }
 

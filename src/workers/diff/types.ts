@@ -3,6 +3,8 @@ export type DiffLineType = "added" | "removed" | "context";
 export interface DiffLine {
   type: DiffLineType;
   content: string;
+  oldLineNumber?: number | null;
+  newLineNumber?: number | null;
 }
 
 export interface DiffHunk {

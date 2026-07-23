@@ -5,6 +5,7 @@ const appBaseUrl = process.env.NUXT_APP_BASE_URL ?? (process.env.NODE_ENV === "p
 export default defineNuxtConfig({
   ssr: false,
   srcDir: "src/",
+  css: ["~/assets/css/main.css", "vue-virtual-scroller/dist/vue-virtual-scroller.css"],
   app: {
     baseURL: appBaseUrl
   },
@@ -19,7 +20,7 @@ export default defineNuxtConfig({
   nitro: {
     preset: "github-pages"
   },
-  modules: ["@pinia/nuxt"],
+  modules: ["@pinia/nuxt", "@nuxtjs/tailwindcss"],
   typescript: {
     strict: true,
     typeCheck: true

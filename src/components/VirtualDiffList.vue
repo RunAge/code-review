@@ -3,15 +3,19 @@
     :items="items"
     :item-size="84"
     key-field="patchId"
-    class="virtual-diff-list"
+    class="h-[70vh] overflow-hidden rounded-[1.4rem] border border-ink/10 bg-white/90 shadow-soft backdrop-blur"
   >
     <template #default="{ item }">
-      <article class="hunk-item" :data-patch-id="item.patchId">
-        <header class="hunk-header">
-          <strong>{{ item.filePath }}</strong>
-          <code>{{ item.patchId }}</code>
+      <article class="border-b border-ink/10 bg-white/80 p-4" :data-patch-id="item.patchId">
+        <header class="mb-2 flex items-start justify-between gap-3">
+          <strong class="truncate text-sm font-semibold text-ink">{{ item.filePath }}</strong>
+          <code class="max-w-[48%] truncate rounded-md border border-ink/10 bg-mist/80 px-2 py-1 text-[11px] text-ink/65">{{ item.patchId }}</code>
         </header>
-        <pre v-for="(line, index) in item.lines" :key="`${item.patchId}-${index}`">{{ line.content }}</pre>
+        <pre
+          v-for="(line, index) in item.lines"
+          :key="`${item.patchId}-${index}`"
+          class="mb-1 overflow-x-auto rounded-md border-l-2 border-ink/10 bg-mist/60 px-3 py-1.5 font-mono text-[12px] leading-relaxed text-ink/90"
+        >{{ line.content }}</pre>
       </article>
     </template>
   </RecycleScroller>
@@ -26,28 +30,3 @@ defineProps<{
   items: FlatReviewHunk[];
 }>();
 </script>
-
-<style scoped>
-.virtual-diff-list {
-  height: 70vh;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-}
-
-.hunk-item {
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #ffffff;
-}
-
-.hunk-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-pre {
-  margin: 0;
-  font-size: 12px;
-}
-</style>

@@ -1,32 +1,64 @@
 <template>
-  <main class="review-page" @keydown="onKeyDown" tabindex="0">
-    <aside class="file-tree">
-      <h2>Files</h2>
-      <p class="context">{{ contextLabel }}</p>
-      <ul>
+  <main class="mx-auto grid min-h-screen w-full max-w-[1600px] grid-cols-1 gap-6 px-5 py-6 lg:grid-cols-[320px_1fr] lg:px-8" @keydown="onKeyDown" tabindex="0">
+    <aside class="rounded-[1.4rem] border border-ink/10 bg-white/90 p-5 shadow-soft backdrop-blur">
+      <div class="mb-4 border-b border-ink/10 pb-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink/50">Pull Request</p>
+        <h2 class="mt-2 text-2xl font-bold">Files</h2>
+        <p class="mt-1 text-xs text-ink/60">{{ contextLabel }}</p>
+      </div>
+
+      <ul class="max-h-[58vh] space-y-2 overflow-auto pr-1">
         <li v-for="file in progress" :key="file.filePath">
           <button
             type="button"
-            class="file-button"
-            :class="{ active: file.filePath === selectedFilePath }"
+            class="w-full rounded-lg border px-3 py-2 text-left text-sm font-medium transition"
+            :class="
+              file.filePath === selectedFilePath
+                ? 'border-ink/60 bg-ink text-white'
+                : 'border-ink/10 bg-mist/70 text-ink hover:border-ink/30'
+            "
             @click="selectedFilePath = file.filePath"
           >
-            {{ file.filePath }} [{{ file.reviewed }}/{{ file.total }}]
+            <span class="block truncate">{{ file.filePath }}</span>
+            <span class="mt-0.5 block text-xs" :class="file.filePath === selectedFilePath ? 'text-white/75' : 'text-ink/60'">
+              {{ file.reviewed }}/{{ file.total }} reviewed
+            </span>
           </button>
         </li>
       </ul>
-      <p v-if="noiseCount > 0">Hidden AI noise files: {{ noiseCount }}</p>
-      <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+
+      <p v-if="noiseCount > 0" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+        Hidden AI noise files: {{ noiseCount }}
+      </p>
+      <p v-if="errorMessage" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+        {{ errorMessage }}
+      </p>
     </aside>
 
-    <section class="diff-pane">
-      <header class="toolbar">
-        <button type="button" @click="mode = 'unified'">Unified</button>
-        <button type="button" @click="mode = 'split'">Split</button>
+    <section class="space-y-5">
+      <header class="flex flex-wrap items-center gap-3 rounded-[1.4rem] border border-ink/10 bg-white/90 p-4 shadow-soft backdrop-blur">
+        <div class="inline-flex rounded-xl border border-ink/15 bg-mist/75 p-1">
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition"
+            :class="mode === 'unified' ? 'bg-white text-ink shadow' : 'text-ink/60 hover:text-ink'"
+            @click="mode = 'unified'"
+          >
+            Unified
+          </button>
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition"
+            :class="mode === 'split' ? 'bg-white text-ink shadow' : 'text-ink/60 hover:text-ink'"
+            @click="mode = 'split'"
+          >
+            Split
+          </button>
+        </div>
 
-        <label>
+        <label class="ml-auto flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink/60">
           Comments
-          <select v-model="commentFilterMode">
+          <select v-model="commentFilterMode" class="rounded-lg border border-ink/15 bg-white px-2 py-1.5 text-xs font-medium text-ink outline-none transition focus:border-flare/50">
             <option value="all">All</option>
             <option value="humans">Humans</option>
             <option value="bots">Bots</option>
@@ -35,33 +67,56 @@
         </label>
       </header>
 
-      <p v-if="isLoading">Loading pull request data...</p>
+      <p v-if="isLoading" class="rounded-xl border border-tide/20 bg-tide/10 px-4 py-3 text-sm font-medium text-tide">
+        Loading pull request data...
+      </p>
 
-      <DiffView
-        v-if="mode === 'split'"
-        mode="split"
-        :hunks="activeFileHunks"
-        :file-path="selectedFilePath"
-        :comments-tree="filteredCommentsTree"
-      />
-      <DiffView
-        v-else
-        mode="unified"
-        :hunks="activeFileHunks"
-        :file-path="selectedFilePath"
-        :comments-tree="filteredCommentsTree"
-      />
+      <section class="rounded-[1.4rem] border border-ink/10 bg-white/90 p-4 shadow-soft backdrop-blur">
+        <DiffView
+          v-if="mode === 'split'"
+          mode="split"
+          :hunks="activeFileHunks"
+          :file-path="selectedFilePath"
+          :comments-tree="filteredCommentsTree"
+        />
+        <DiffView
+          v-else
+          mode="unified"
+          :hunks="activeFileHunks"
+          :file-path="selectedFilePath"
+          :comments-tree="filteredCommentsTree"
+        />
+      </section>
 
       <VirtualDiffList :items="flatVisibleHunks" />
 
-      <section class="review-actions">
-        <h3>Submit Review</h3>
-        <textarea v-model="reviewMessage" rows="4" placeholder="Optional review message" />
-        <div class="buttons">
-          <button type="button" @click="sendReviewDecision('APPROVE')">Approve</button>
-          <button type="button" @click="sendReviewDecision('REQUEST_CHANGES')">Request changes</button>
+      <section class="rounded-[1.4rem] border border-ink/10 bg-white/90 p-5 shadow-soft backdrop-blur">
+        <h3 class="text-lg font-semibold">Submit Review</h3>
+        <textarea
+          v-model="reviewMessage"
+          rows="4"
+          placeholder="Optional review message"
+          class="mt-3 w-full rounded-xl border border-ink/15 bg-mist/70 px-4 py-3 text-sm text-ink outline-none transition focus:border-flare/60 focus:ring-2 focus:ring-flare/20"
+        />
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            class="rounded-xl bg-moss px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-moss/90"
+            @click="sendReviewDecision('APPROVE')"
+          >
+            Approve
+          </button>
+          <button
+            type="button"
+            class="rounded-xl bg-flare px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-flare/90"
+            @click="sendReviewDecision('REQUEST_CHANGES')"
+          >
+            Request changes
+          </button>
         </div>
-        <p v-if="reviewStatusMessage">{{ reviewStatusMessage }}</p>
+        <p v-if="reviewStatusMessage" class="mt-4 rounded-xl border border-ink/10 bg-mist/70 px-4 py-3 text-sm text-ink/85">
+          {{ reviewStatusMessage }}
+        </p>
       </section>
     </section>
   </main>
@@ -253,70 +308,3 @@ async function sendReviewDecision(event: "APPROVE" | "REQUEST_CHANGES") {
 
 onMounted(loadReview);
 </script>
-
-<style scoped>
-.review-page {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 16px;
-  padding: 16px;
-}
-
-.file-tree {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.diff-pane {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.toolbar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.file-button {
-  width: 100%;
-  text-align: left;
-  border: none;
-  background: transparent;
-  padding: 4px 0;
-}
-
-.file-button.active {
-  font-weight: 700;
-}
-
-.review-actions {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.buttons {
-  margin-top: 8px;
-  display: flex;
-  gap: 8px;
-}
-
-.error {
-  color: #b91c1c;
-}
-
-.context {
-  font-size: 12px;
-  color: #4b5563;
-}
-
-@media (max-width: 900px) {
-  .review-page {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

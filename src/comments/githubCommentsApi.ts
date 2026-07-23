@@ -21,6 +21,7 @@ interface ReviewSubmitInput extends RepoRef {
   body?: string;
   comments?: Array<{
     path: string;
+    startLine?: number;
     line: number;
     body: string;
   }>;
@@ -29,6 +30,7 @@ interface ReviewSubmitInput extends RepoRef {
 interface InlineCommentSubmitInput extends RepoRef {
   pullNumber: number;
   path: string;
+  startLine?: number;
   line: number;
   body: string;
 }
@@ -130,12 +132,25 @@ export async function submitPullRequestReview(
   fetchImpl: typeof fetch = fetch
 ): Promise<void> {
   const url = `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.pullNumber}/reviews`;
-  const comments = (input.comments ?? []).map((comment) => ({
-    path: comment.path,
-    line: comment.line,
-    side: "RIGHT",
-    body: comment.body
-  }));
+  const comments = (input.comments ?? []).map((comment) => {
+    const normalizedStartLine =
+      typeof comment.startLine === "number" && comment.startLine !== comment.line
+        ? Math.min(comment.startLine, comment.line)
+        : undefined;
+    const normalizedEndLine =
+      typeof comment.startLine === "number" && comment.startLine !== comment.line
+        ? Math.max(comment.startLine, comment.line)
+        : comment.line;
+
+    return {
+      path: comment.path,
+      line: normalizedEndLine,
+      side: "RIGHT",
+      start_line: normalizedStartLine,
+      start_side: normalizedStartLine ? "RIGHT" : undefined,
+      body: comment.body
+    };
+  });
 
   const response = await fetchImpl(url, {
     method: "POST",
@@ -169,8 +184,13 @@ export async function submitPullRequestInlineComment(
     body: JSON.stringify({
       body: input.body,
       path: input.path,
-      line: input.line,
-      side: "RIGHT"
+      line: input.startLine && input.startLine !== input.line ? Math.max(input.startLine, input.line) : input.line,
+      side: "RIGHT",
+      start_line:
+        input.startLine && input.startLine !== input.line
+          ? Math.min(input.startLine, input.line)
+          : undefined,
+      start_side: input.startLine && input.startLine !== input.line ? "RIGHT" : undefined
     })
   });
 

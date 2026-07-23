@@ -7,25 +7,15 @@
         <p class="mt-1 text-xs text-ink/60">{{ contextLabel }}</p>
       </div>
 
-      <ul class="max-h-[58vh] space-y-2 overflow-auto pr-1">
-        <li v-for="file in progress" :key="file.filePath">
-          <button
-            type="button"
-            class="w-full rounded-lg border px-3 py-2 text-left text-sm font-medium transition"
-            :class="
-              file.filePath === selectedFilePath
-                ? 'border-tide/70 bg-[#313244] text-ink'
-                : 'border-ink/20 bg-[#313244]/70 text-ink hover:border-ink/40'
-            "
-            @click="selectedFilePath = file.filePath"
-          >
-            <span class="block truncate">{{ file.filePath }}</span>
-            <span class="mt-0.5 block text-xs" :class="file.filePath === selectedFilePath ? 'text-ink/80' : 'text-ink/60'">
-              {{ file.reviewed }}/{{ file.total }} reviewed
-            </span>
-          </button>
-        </li>
-      </ul>
+      <div class="max-h-[58vh] overflow-auto pr-1">
+        <FileTreeView
+          :nodes="fileTree"
+          :selected-file-path="selectedFilePath"
+          :expanded="expandedFolders"
+          @select-file="selectedFilePath = $event"
+          @toggle-folder="toggleFolder"
+        />
+      </div>
 
       <p v-if="noiseCount > 0" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
         Hidden AI noise files: {{ noiseCount }}
@@ -102,7 +92,8 @@
           :hunks="activeFileHunks"
           :file-path="selectedFilePath"
           :comments-tree="filteredCommentsTree"
-          @comment-line="startInlineComment($event.lineNumber)"
+          :inline-comment-draft="inlineCommentDraft"
+          @comment-line="startInlineComment($event)"
         />
         <DiffView
           v-else
@@ -110,46 +101,49 @@
           :hunks="activeFileHunks"
           :file-path="selectedFilePath"
           :comments-tree="filteredCommentsTree"
-          @comment-line="startInlineComment($event.lineNumber)"
+          :inline-comment-draft="inlineCommentDraft"
+          @comment-line="startInlineComment($event)"
         />
 
-        <section
-          v-if="inlineCommentLine !== null"
-          class="mt-4 rounded-xl border border-ink/20 bg-mist/70 p-4"
-        >
-          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-ink/65">
-            Add inline comment · line {{ inlineCommentLine }}
-          </p>
-          <textarea
-            v-model="inlineCommentBody"
-            rows="4"
-            placeholder="Write a code comment"
-            class="mt-3 w-full rounded-xl border border-ink/20 bg-[#181825] px-4 py-3 text-sm text-ink outline-none transition focus:border-flare/60 focus:ring-2 focus:ring-flare/20"
-          />
-          <div class="mt-3 flex flex-wrap gap-3">
-            <button
-              type="button"
-              class="rounded-xl bg-tide px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-tide/90"
-              @click="submitInlineCommentForLine"
-            >
-              Add single comment
-            </button>
-            <button
-              type="button"
-              class="rounded-xl bg-flare px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-flare/90"
-              @click="addInlineCommentToReview"
-            >
-              {{ pendingInlineComments.length > 0 ? "Add to review" : "Start review" }}
-            </button>
-            <button
-              type="button"
-              class="rounded-xl border border-ink/30 px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-ink transition hover:border-ink/50"
-              @click="cancelInlineComment"
-            >
-              Cancel
-            </button>
-          </div>
-        </section>
+        <Teleport v-if="inlineCommentDraft?.anchorId" :to="`#${inlineCommentDraft.anchorId}`">
+          <section class="mt-3 rounded-xl border border-ink/20 bg-[#11111b] p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.12em] text-ink/65">
+              Add inline comment · {{ inlineCommentRangeLabel }}
+            </p>
+            <p class="mt-1 text-[11px] text-ink/60">
+              Drag over lines to select a range, then comment.
+            </p>
+            <textarea
+              v-model="inlineCommentBody"
+              rows="4"
+              placeholder="Write a code comment"
+              class="mt-3 w-full rounded-xl border border-ink/20 bg-[#181825] px-4 py-3 text-sm text-ink outline-none transition focus:border-flare/60 focus:ring-2 focus:ring-flare/20"
+            />
+            <div class="mt-3 flex flex-wrap gap-3">
+              <button
+                type="button"
+                class="rounded-xl bg-tide px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-tide/90"
+                @click="submitInlineCommentForLine"
+              >
+                Add single comment
+              </button>
+              <button
+                type="button"
+                class="rounded-xl bg-flare px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-flare/90"
+                @click="addInlineCommentToReview"
+              >
+                {{ pendingInlineComments.length > 0 ? "Add to review" : "Start review" }}
+              </button>
+              <button
+                type="button"
+                class="rounded-xl border border-ink/30 px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-ink transition hover:border-ink/50"
+                @click="cancelInlineComment"
+              >
+                Cancel
+              </button>
+            </div>
+          </section>
+        </Teleport>
       </section>
 
       <p v-if="inlineCommentStatus" class="rounded-xl border border-ink/20 bg-mist/70 px-4 py-3 text-sm text-ink/90">
@@ -166,18 +160,18 @@
           <ul class="mt-3 space-y-2">
             <li
               v-for="comment in pendingInlineComments"
-              :key="`${comment.path}:${comment.line}:${comment.body}`"
+              :key="`${comment.path}:${comment.startLine ?? comment.line}:${comment.line}:${comment.body}`"
               class="rounded-lg border border-ink/20 bg-[#313244] p-3"
             >
               <div class="flex items-center gap-2 text-xs text-ink/70">
                 <span class="font-semibold">{{ comment.path }}</span>
-                <span>line {{ comment.line }}</span>
+                <span>{{ comment.startLine ? `lines ${Math.min(comment.startLine, comment.line)}-${Math.max(comment.startLine, comment.line)}` : `line ${comment.line}` }}</span>
               </div>
               <p class="mt-1 text-sm text-ink/90 whitespace-pre-wrap">{{ comment.body }}</p>
               <button
                 type="button"
                 class="mt-2 rounded-md border border-ink/30 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink/80 transition hover:border-flare/60 hover:text-flare"
-                @click="removePendingInlineComment(comment.path, comment.line, comment.body)"
+                @click="removePendingInlineComment(comment.path, comment.startLine, comment.line, comment.body)"
               >
                 Remove
               </button>
@@ -226,6 +220,8 @@
 import { computed, onMounted, ref } from "vue";
 
 import DiffView from "../components/DiffView";
+import FileTreeView from "../components/FileTreeView.vue";
+import { buildFileTree, type FileTreeNode } from "../components/fileTree";
 import { buildFileTreeProgress } from "../components/fileTreeProgress";
 import { buildReviewPageState, type ParsedReviewFile } from "../composables/reviewPageModel";
 import { handleReviewShortcut } from "../composables/useKeyboardShortcuts";
@@ -250,9 +246,12 @@ const errorMessage = ref("");
 const reviewStatusMessage = ref("");
 const reviewMessage = ref("");
 const inlineCommentLine = ref<number | null>(null);
+const inlineCommentStartLine = ref<number | null>(null);
 const inlineCommentBody = ref("");
 const inlineCommentStatus = ref("");
-const pendingInlineComments = ref<Array<{ path: string; line: number; body: string }>>([]);
+const inlineCommentAnchorId = ref<string | null>(null);
+const pendingInlineComments = ref<Array<{ path: string; startLine?: number; line: number; body: string }>>([]);
+const expandedFolders = ref<Set<string>>(new Set());
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -318,9 +317,59 @@ const progress = computed(() =>
 );
 const noiseCount = computed(() => state.value.noiseFiles.length);
 const activeHunk = computed(() => store.hunks[store.activeIndex] ?? null);
+const fileTree = computed<FileTreeNode[]>(() => buildFileTree(progress.value));
+const inlineCommentDraft = computed(() => {
+  if (inlineCommentLine.value === null) {
+    return null;
+  }
+
+  return {
+    line: inlineCommentLine.value,
+    startLine: inlineCommentStartLine.value ?? undefined,
+    anchorId: inlineCommentAnchorId.value ?? undefined
+  };
+});
+const inlineCommentRangeLabel = computed(() => {
+  if (inlineCommentLine.value === null) {
+    return "line ?";
+  }
+
+  const start = inlineCommentStartLine.value ?? inlineCommentLine.value;
+  if (start === inlineCommentLine.value) {
+    return `line ${inlineCommentLine.value}`;
+  }
+
+  return `lines ${Math.min(start, inlineCommentLine.value)}-${Math.max(start, inlineCommentLine.value)}`;
+});
 
 function getActiveStoreHunk() {
   return store.hunks[store.activeIndex] ?? null;
+}
+
+function toggleFolder(folderId: string) {
+  const next = new Set(expandedFolders.value);
+  if (next.has(folderId)) {
+    next.delete(folderId);
+  } else {
+    next.add(folderId);
+  }
+  expandedFolders.value = next;
+}
+
+function expandAncestors(path: string) {
+  const parts = path.split("/").filter(Boolean);
+  if (parts.length < 2) {
+    return;
+  }
+
+  const next = new Set(expandedFolders.value);
+  let current = "";
+  for (let index = 0; index < parts.length - 1; index += 1) {
+    current = current ? `${current}/${parts[index]}` : parts[index];
+    next.add(current);
+  }
+
+  expandedFolders.value = next;
 }
 
 async function persistViewedStateForActiveHunk() {
@@ -387,6 +436,9 @@ async function loadReview() {
     );
 
     selectedFilePath.value = loaded.hunks[0]?.filePath ?? "";
+    if (selectedFilePath.value) {
+      expandAncestors(selectedFilePath.value);
+    }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : "Failed to load review data";
   } finally {
@@ -394,14 +446,17 @@ async function loadReview() {
   }
 }
 
-function startInlineComment(lineNumber: number) {
-  inlineCommentLine.value = lineNumber;
-  inlineCommentBody.value = "";
+function startInlineComment(payload: { lineNumber: number; startLine?: number; anchorId?: string }) {
+  inlineCommentLine.value = payload.lineNumber;
+  inlineCommentStartLine.value = payload.startLine ?? payload.lineNumber;
+  inlineCommentAnchorId.value = payload.anchorId ?? null;
   inlineCommentStatus.value = "";
 }
 
 function cancelInlineComment() {
   inlineCommentLine.value = null;
+  inlineCommentStartLine.value = null;
+  inlineCommentAnchorId.value = null;
   inlineCommentBody.value = "";
 }
 
@@ -421,6 +476,7 @@ function addInlineCommentToReview() {
 
   pendingInlineComments.value.push({
     path: selectedFilePath.value,
+    startLine: inlineCommentStartLine.value ?? undefined,
     line: inlineCommentLine.value,
     body
   });
@@ -429,9 +485,13 @@ function addInlineCommentToReview() {
   cancelInlineComment();
 }
 
-function removePendingInlineComment(path: string, line: number, body: string) {
+function removePendingInlineComment(path: string, startLine: number | undefined, line: number, body: string) {
   const index = pendingInlineComments.value.findIndex(
-    (comment) => comment.path === path && comment.line === line && comment.body === body
+    (comment) =>
+      comment.path === path &&
+      comment.startLine === startLine &&
+      comment.line === line &&
+      comment.body === body
   );
 
   if (index >= 0) {
@@ -464,6 +524,7 @@ async function submitInlineCommentForLine() {
       {
         ...context.value,
         path: selectedFilePath.value,
+        startLine: inlineCommentStartLine.value ?? undefined,
         line: inlineCommentLine.value,
         body
       },

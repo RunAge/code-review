@@ -129,6 +129,7 @@ export async function submitReviewDecision(
     body?: string;
     comments?: Array<{
       path: string;
+      startLine?: number;
       line: number;
       body: string;
     }>;
@@ -151,6 +152,7 @@ export async function submitReviewDecision(
 export async function submitInlineComment(
   input: PullRequestContext & {
     path: string;
+    startLine?: number;
     line: number;
     body: string;
   },
@@ -162,6 +164,7 @@ export async function submitInlineComment(
       repo: input.repo,
       pullNumber: input.pullNumber,
       path: input.path,
+      startLine: input.startLine,
       line: input.line,
       body: input.body
     },

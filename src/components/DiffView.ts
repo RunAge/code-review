@@ -25,7 +25,8 @@ type InlineCommentTree = Record<string, Record<number, InlineComment[]>>;
 export default defineComponent({
   name: "DiffView",
   emits: {
-    "comment-line": (payload: { lineNumber: number }) => typeof payload?.lineNumber === "number"
+    "comment-line": (payload: { lineNumber: number; startLine?: number; anchorId?: string }) =>
+      typeof payload?.lineNumber === "number"
   },
   props: {
     mode: {
@@ -45,6 +46,15 @@ export default defineComponent({
       type: Object as PropType<InlineCommentTree>,
       required: false,
       default: () => ({})
+    },
+    inlineCommentDraft: {
+      type: Object as PropType<{
+        line: number;
+        startLine?: number;
+        anchorId?: string;
+      } | null>,
+      required: false,
+      default: null
     }
   },
   setup(props, { emit }) {
@@ -97,15 +107,64 @@ export default defineComponent({
       );
     }
 
+    function normalizeRange(startLine: number, lineNumber: number) {
+      return {
+        startLine: Math.min(startLine, lineNumber),
+        endLine: Math.max(startLine, lineNumber)
+      };
+    }
+
+    function shouldShowDraftBelow(anchorId: string): boolean {
+      return props.inlineCommentDraft?.anchorId === anchorId;
+    }
+
     function renderLine(patchId: string, line: DiffLine, index: number, suffix = "") {
       const lineKey = `${patchId}${suffix}-${index}`;
+      const anchorId = `inline-anchor-${lineKey}`;
       const canComment = typeof line.newLineNumber === "number";
+      const lineNumber = canComment ? (line.newLineNumber as number) : null;
+      const isRangeMode = typeof props.inlineCommentDraft?.startLine === "number";
 
-      return h("div", { class: "group mb-1 flex items-start gap-2", key: lineKey }, [
+      let inDraftRange = false;
+      if (lineNumber !== null && props.inlineCommentDraft) {
+        const start = props.inlineCommentDraft.startLine ?? props.inlineCommentDraft.line;
+        const range = normalizeRange(start, props.inlineCommentDraft.line);
+        inDraftRange = lineNumber >= range.startLine && lineNumber <= range.endLine;
+      }
+
+      const row = h("div", { class: "group mb-1 flex items-start gap-2", key: lineKey }, [
         h(
           "pre",
           {
-            class: `min-w-0 flex-1 overflow-x-auto rounded-md px-3 py-1.5 font-mono text-[12px] leading-relaxed ${lineClass(line.type)}`
+            class: `min-w-0 flex-1 overflow-x-auto rounded-md px-3 py-1.5 font-mono text-[12px] leading-relaxed ${lineClass(line.type)} ${inDraftRange ? "ring-1 ring-flare/60" : ""}`,
+            "data-line-number": lineNumber ?? undefined,
+            onMouseDown: canComment
+              ? (event: MouseEvent) => {
+                  if (event.shiftKey && props.inlineCommentDraft && typeof props.inlineCommentDraft.line === "number") {
+                    emit("comment-line", {
+                      lineNumber: lineNumber as number,
+                      startLine: props.inlineCommentDraft.line,
+                      anchorId
+                    });
+                    return;
+                  }
+
+                  emit("comment-line", { lineNumber: lineNumber as number, anchorId });
+                }
+              : undefined,
+            onMouseEnter: canComment
+              ? (event: MouseEvent) => {
+                  if ((event.buttons & 1) !== 1 || !props.inlineCommentDraft || !isRangeMode) {
+                    return;
+                  }
+
+                  emit("comment-line", {
+                    lineNumber: lineNumber as number,
+                    startLine: props.inlineCommentDraft.startLine,
+                    anchorId
+                  });
+                }
+              : undefined
           },
           line.content
         ),
@@ -116,12 +175,19 @@ export default defineComponent({
                 class:
                   "mt-1 hidden rounded-md border border-ink/30 bg-[#313244] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink/85 transition hover:border-flare/60 hover:text-flare group-hover:inline-block",
                 type: "button",
-                onClick: () => emit("comment-line", { lineNumber: line.newLineNumber as number })
+                onClick: () =>
+                  emit("comment-line", {
+                    lineNumber: line.newLineNumber as number,
+                    startLine: line.newLineNumber as number,
+                    anchorId
+                  })
               },
               "+ Comment"
             )
           : null
       ]);
+
+      return [row, shouldShowDraftBelow(anchorId) ? h("div", { id: anchorId }) : null];
     }
 
     return () => {
@@ -132,10 +198,7 @@ export default defineComponent({
               renderHunkHeader(hunk.patchId, hunk.header, "-left"),
               ...hunk.lines
                 .filter((line) => line.type !== "added")
-                .flatMap((line, index) => [
-                  renderLine(hunk.patchId, line, index, "-left"),
-                  ...renderInlineComments(line)
-                ])
+                .flatMap((line, index) => [...renderLine(hunk.patchId, line, index, "-left"), ...renderInlineComments(line)])
             ])
           ]),
           h("div", { class: "rounded-xl border border-ink/20 bg-[#181825] p-3", "data-testid": "split-right" }, [
@@ -143,10 +206,7 @@ export default defineComponent({
               renderHunkHeader(hunk.patchId, hunk.header, "-right"),
               ...hunk.lines
                 .filter((line) => line.type !== "removed")
-                .flatMap((line, index) => [
-                  renderLine(hunk.patchId, line, index, "-right"),
-                  ...renderInlineComments(line)
-                ])
+                .flatMap((line, index) => [...renderLine(hunk.patchId, line, index, "-right"), ...renderInlineComments(line)])
             ])
           ])
         ]);
@@ -155,7 +215,7 @@ export default defineComponent({
       return h("section", { class: "rounded-xl border border-ink/20 bg-[#181825] p-3", "data-testid": "mode-unified" }, [
         ...props.hunks.flatMap((hunk) => [
           renderHunkHeader(hunk.patchId, hunk.header),
-          ...hunk.lines.flatMap((line, index) => [renderLine(hunk.patchId, line, index), ...renderInlineComments(line)])
+          ...hunk.lines.flatMap((line, index) => [...renderLine(hunk.patchId, line, index), ...renderInlineComments(line)])
         ])
       ]);
     };

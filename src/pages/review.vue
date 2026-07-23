@@ -67,6 +67,30 @@
         </label>
       </header>
 
+      <section class="rounded-[1.4rem] border border-ink/10 bg-white/90 p-4 shadow-soft backdrop-blur">
+        <div class="flex flex-wrap items-center gap-3">
+          <p class="text-sm font-semibold text-ink">Viewed Changes</p>
+          <span
+            class="rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]"
+            :class="activeHunk?.isViewed ? 'bg-moss/15 text-moss' : 'bg-flare/15 text-flare'"
+          >
+            {{ activeHunk?.isViewed ? "Viewed" : "Not viewed" }}
+          </span>
+          <button
+            type="button"
+            class="ml-auto rounded-xl border border-ink/15 bg-mist/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-ink/35"
+            :disabled="!activeHunk"
+            :class="!activeHunk ? 'cursor-not-allowed opacity-50' : ''"
+            @click="toggleViewedForActiveHunk"
+          >
+            {{ activeHunk?.isViewed ? "Mark as not viewed" : "Mark as viewed" }}
+          </button>
+        </div>
+        <p class="mt-3 text-xs text-ink/65">
+          Shortcuts: J = next unread, K = previous unread, M = toggle viewed.
+        </p>
+      </section>
+
       <p v-if="isLoading" class="rounded-xl border border-tide/20 bg-tide/10 px-4 py-3 text-sm font-medium text-tide">
         Loading pull request data...
       </p>
@@ -214,34 +238,43 @@ const progress = computed(() =>
   )
 );
 const noiseCount = computed(() => state.value.noiseFiles.length);
+const activeHunk = computed(() => store.hunks[store.activeIndex] ?? null);
 
 function getActiveStoreHunk() {
   return store.hunks[store.activeIndex] ?? null;
 }
 
+async function persistViewedStateForActiveHunk() {
+  if (!context.value) {
+    return;
+  }
+
+  const active = getActiveStoreHunk();
+  if (!active?.filePath) {
+    return;
+  }
+
+  await persistHunkViewedState({
+    pullNumber: context.value.pullNumber,
+    filePath: active.filePath,
+    patchId: active.patchId,
+    isViewed: active.isViewed
+  });
+}
+
+async function toggleViewedForActiveHunk() {
+  store.toggleActiveViewed();
+  await persistViewedStateForActiveHunk();
+}
+
 async function onKeyDown(event: KeyboardEvent) {
-  const before = getActiveStoreHunk();
   handleReviewShortcut(event.key, store);
 
   if (event.key.toLowerCase() !== "m") {
     return;
   }
 
-  if (!context.value) {
-    return;
-  }
-
-  const after = before ?? getActiveStoreHunk();
-  if (!after?.filePath) {
-    return;
-  }
-
-  await persistHunkViewedState({
-    pullNumber: context.value.pullNumber,
-    filePath: after.filePath,
-    patchId: after.patchId,
-    isViewed: after.isViewed
-  });
+  await persistViewedStateForActiveHunk();
 }
 
 async function loadReview() {

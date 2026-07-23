@@ -1,13 +1,23 @@
 <template>
-  <main class="mx-auto grid min-h-screen w-full max-w-[1600px] grid-cols-1 gap-6 px-5 py-6 lg:grid-cols-[320px_1fr] lg:px-8" @keydown="onKeyDown" tabindex="0">
-    <aside class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-5 shadow-soft backdrop-blur">
-      <div class="mb-4 border-b border-ink/10 pb-4">
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-ink/50">Pull Request</p>
-        <h2 class="mt-2 text-2xl font-bold">Files</h2>
-        <p class="mt-1 text-xs text-ink/60">{{ contextLabel }}</p>
+  <main
+    class="grid min-h-screen w-full grid-cols-1 gap-0 lg:grid-cols-[320px_1fr]"
+    @keydown="onKeyDown"
+    tabindex="0"
+  >
+    <aside
+      class="border-b border-r border-ink/20 bg-[#181825] p-3 lg:sticky lg:top-0 lg:h-screen lg:border-b-0"
+    >
+      <div class="mb-3 border-b border-ink/20 pb-3">
+        <p
+          class="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/55"
+        >
+          Explorer
+        </p>
+        <h2 class="mt-1 text-base font-semibold">Files</h2>
+        <p class="mt-1 text-[11px] text-ink/55">{{ contextLabel }}</p>
       </div>
 
-      <div class="max-h-[58vh] overflow-auto pr-1">
+      <div class="max-h-[calc(100vh-9rem)] overflow-auto pr-1">
         <FileTreeView
           :nodes="fileTree"
           :selected-file-path="selectedFilePath"
@@ -17,21 +27,35 @@
         />
       </div>
 
-      <p v-if="noiseCount > 0" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+      <p
+        v-if="noiseCount > 0"
+        class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700"
+      >
         Hidden AI noise files: {{ noiseCount }}
       </p>
-      <p v-if="errorMessage" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+      <p
+        v-if="errorMessage"
+        class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700"
+      >
         {{ errorMessage }}
       </p>
     </aside>
 
-    <section class="space-y-5">
-      <header class="flex flex-wrap items-center gap-3 rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur">
-        <div class="inline-flex rounded-xl border border-ink/20 bg-[#313244] p-1">
+    <section class="space-y-5 px-5 py-6 lg:px-7">
+      <header
+        class="flex flex-wrap items-center gap-3 rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur"
+      >
+        <div
+          class="inline-flex rounded-xl border border-ink/20 bg-[#313244] p-1"
+        >
           <button
             type="button"
             class="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition"
-            :class="mode === 'unified' ? 'bg-[#45475a] text-ink shadow' : 'text-ink/60 hover:text-ink'"
+            :class="
+              mode === 'unified'
+                ? 'bg-[#45475a] text-ink shadow'
+                : 'text-ink/60 hover:text-ink'
+            "
             @click="mode = 'unified'"
           >
             Unified
@@ -39,16 +63,25 @@
           <button
             type="button"
             class="rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition"
-            :class="mode === 'split' ? 'bg-[#45475a] text-ink shadow' : 'text-ink/60 hover:text-ink'"
+            :class="
+              mode === 'split'
+                ? 'bg-[#45475a] text-ink shadow'
+                : 'text-ink/60 hover:text-ink'
+            "
             @click="mode = 'split'"
           >
             Split
           </button>
         </div>
 
-        <label class="ml-auto flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink/60">
+        <label
+          class="ml-auto flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink/60"
+        >
           Comments
-          <select v-model="commentFilterMode" class="rounded-lg border border-ink/20 bg-[#313244] px-2 py-1.5 text-xs font-medium text-ink outline-none transition focus:border-flare/60">
+          <select
+            v-model="commentFilterMode"
+            class="rounded-lg border border-ink/20 bg-[#313244] px-2 py-1.5 text-xs font-medium text-ink outline-none transition focus:border-flare/60"
+          >
             <option value="all">All</option>
             <option value="humans">Humans</option>
             <option value="bots">Bots</option>
@@ -57,12 +90,18 @@
         </label>
       </header>
 
-      <section class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur">
+      <section
+        class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur"
+      >
         <div class="flex flex-wrap items-center gap-3">
           <p class="text-sm font-semibold text-ink">Viewed Changes</p>
           <span
             class="rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]"
-            :class="activeHunk?.isViewed ? 'bg-moss/15 text-moss' : 'bg-flare/15 text-flare'"
+            :class="
+              activeHunk?.isViewed
+                ? 'bg-moss/15 text-moss'
+                : 'bg-flare/15 text-flare'
+            "
           >
             {{ activeHunk?.isViewed ? "Viewed" : "Not viewed" }}
           </span>
@@ -81,11 +120,16 @@
         </p>
       </section>
 
-      <p v-if="isLoading" class="rounded-xl border border-tide/20 bg-tide/10 px-4 py-3 text-sm font-medium text-tide">
+      <p
+        v-if="isLoading"
+        class="rounded-xl border border-tide/20 bg-tide/10 px-4 py-3 text-sm font-medium text-tide"
+      >
         Loading pull request data...
       </p>
 
-      <section class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur">
+      <section
+        class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-4 shadow-soft backdrop-blur"
+      >
         <DiffView
           v-if="mode === 'split'"
           mode="split"
@@ -105,13 +149,20 @@
           @comment-line="startInlineComment($event)"
         />
 
-        <Teleport v-if="inlineCommentDraft?.anchorId" :to="`#${inlineCommentDraft.anchorId}`">
-          <section class="mt-3 rounded-xl border border-ink/20 bg-[#11111b] p-4">
-            <p class="text-xs font-semibold uppercase tracking-[0.12em] text-ink/65">
+        <Teleport
+          v-if="inlineCommentDraft?.anchorId"
+          :to="`#${inlineCommentDraft.anchorId}`"
+        >
+          <section
+            class="mt-3 rounded-xl border border-ink/20 bg-[#11111b] p-4"
+          >
+            <p
+              class="text-xs font-semibold uppercase tracking-[0.12em] text-ink/65"
+            >
               Add inline comment · {{ inlineCommentRangeLabel }}
             </p>
             <p class="mt-1 text-[11px] text-ink/60">
-              Drag over lines to select a range, then comment.
+              Click + on a line to set range start, then click Comment on target end line.
             </p>
             <textarea
               v-model="inlineCommentBody"
@@ -120,6 +171,13 @@
               class="mt-3 w-full rounded-xl border border-ink/20 bg-[#181825] px-4 py-3 text-sm text-ink outline-none transition focus:border-flare/60 focus:ring-2 focus:ring-flare/20"
             />
             <div class="mt-3 flex flex-wrap gap-3">
+              <button
+                type="button"
+                class="rounded-xl border border-ink/30 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink/85 transition hover:border-tide/60 hover:text-tide"
+                @click="insertSuggestionTemplate"
+              >
+                Add suggestion block
+              </button>
               <button
                 type="button"
                 class="rounded-xl bg-tide px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-tide/90"
@@ -132,7 +190,11 @@
                 class="rounded-xl bg-flare px-4 py-2 text-sm font-semibold uppercase tracking-[0.1em] text-[#11111b] transition hover:bg-flare/90"
                 @click="addInlineCommentToReview"
               >
-                {{ pendingInlineComments.length > 0 ? "Add to review" : "Start review" }}
+                {{
+                  pendingInlineComments.length > 0
+                    ? "Add to review"
+                    : "Start review"
+                }}
               </button>
               <button
                 type="button"
@@ -146,32 +208,60 @@
         </Teleport>
       </section>
 
-      <p v-if="inlineCommentStatus" class="rounded-xl border border-ink/20 bg-mist/70 px-4 py-3 text-sm text-ink/90">
+      <p
+        v-if="inlineCommentStatus"
+        class="rounded-xl border border-ink/20 bg-mist/70 px-4 py-3 text-sm text-ink/90"
+      >
         {{ inlineCommentStatus }}
       </p>
 
-      <section class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-5 shadow-soft backdrop-blur">
+      <section
+        class="rounded-[1.4rem] border border-ink/20 bg-mist/90 p-5 shadow-soft backdrop-blur"
+      >
         <h3 class="text-lg font-semibold">Finish your review</h3>
 
-        <section v-if="pendingInlineComments.length > 0" class="mt-3 rounded-xl border border-ink/20 bg-[#181825] p-4">
-          <p class="text-xs font-semibold uppercase tracking-[0.12em] text-ink/70">
+        <section
+          v-if="pendingInlineComments.length > 0"
+          class="mt-3 rounded-xl border border-ink/20 bg-[#181825] p-4"
+        >
+          <p
+            class="text-xs font-semibold uppercase tracking-[0.12em] text-ink/70"
+          >
             Pending review comments ({{ pendingInlineComments.length }})
           </p>
           <ul class="mt-3 space-y-2">
             <li
               v-for="comment in pendingInlineComments"
-              :key="`${comment.path}:${comment.startLine ?? comment.line}:${comment.line}:${comment.body}`"
+              :key="`${comment.path}:${comment.startLine ?? comment.line}:${
+                comment.line
+              }:${comment.body}`"
               class="rounded-lg border border-ink/20 bg-[#313244] p-3"
             >
               <div class="flex items-center gap-2 text-xs text-ink/70">
                 <span class="font-semibold">{{ comment.path }}</span>
-                <span>{{ comment.startLine ? `lines ${Math.min(comment.startLine, comment.line)}-${Math.max(comment.startLine, comment.line)}` : `line ${comment.line}` }}</span>
+                <span>{{
+                  comment.startLine
+                    ? `lines ${Math.min(
+                        comment.startLine,
+                        comment.line
+                      )}-${Math.max(comment.startLine, comment.line)}`
+                    : `line ${comment.line}`
+                }}</span>
               </div>
-              <p class="mt-1 text-sm text-ink/90 whitespace-pre-wrap">{{ comment.body }}</p>
+              <p class="mt-1 text-sm text-ink/90 whitespace-pre-wrap">
+                {{ comment.body }}
+              </p>
               <button
                 type="button"
                 class="mt-2 rounded-md border border-ink/30 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink/80 transition hover:border-flare/60 hover:text-flare"
-                @click="removePendingInlineComment(comment.path, comment.startLine, comment.line, comment.body)"
+                @click="
+                  removePendingInlineComment(
+                    comment.path,
+                    comment.startLine,
+                    comment.line,
+                    comment.body
+                  )
+                "
               >
                 Remove
               </button>
@@ -208,7 +298,10 @@
             Request changes
           </button>
         </div>
-        <p v-if="reviewStatusMessage" class="mt-4 rounded-xl border border-ink/10 bg-mist/70 px-4 py-3 text-sm text-ink/85">
+        <p
+          v-if="reviewStatusMessage"
+          class="mt-4 rounded-xl border border-ink/10 bg-mist/70 px-4 py-3 text-sm text-ink/85"
+        >
           {{ reviewStatusMessage }}
         </p>
       </section>
@@ -223,7 +316,10 @@ import DiffView from "../components/DiffView";
 import FileTreeView from "../components/FileTreeView.vue";
 import { buildFileTree, type FileTreeNode } from "../components/fileTree";
 import { buildFileTreeProgress } from "../components/fileTreeProgress";
-import { buildReviewPageState, type ParsedReviewFile } from "../composables/reviewPageModel";
+import {
+  buildReviewPageState,
+  type ParsedReviewFile,
+} from "../composables/reviewPageModel";
 import { handleReviewShortcut } from "../composables/useKeyboardShortcuts";
 import { useAuthStore } from "../stores/authStore";
 import { useReviewStore } from "../stores/reviewStore";
@@ -234,7 +330,7 @@ import {
   submitInlineComment,
   submitReviewDecision,
   type PullRequestContext,
-  type ReviewCommentTree
+  type ReviewCommentTree,
 } from "../review/loadReviewData";
 import { createGitHubFetch } from "../utils/github/api";
 import type { CommentFilterMode } from "../comments/commentFilters";
@@ -250,7 +346,9 @@ const inlineCommentStartLine = ref<number | null>(null);
 const inlineCommentBody = ref("");
 const inlineCommentStatus = ref("");
 const inlineCommentAnchorId = ref<string | null>(null);
-const pendingInlineComments = ref<Array<{ path: string; startLine?: number; line: number; body: string }>>([]);
+const pendingInlineComments = ref<
+  Array<{ path: string; startLine?: number; line: number; body: string }>
+>([]);
 const expandedFolders = ref<Set<string>>(new Set());
 
 const route = useRoute();
@@ -266,7 +364,11 @@ const context = computed<PullRequestContext | null>(() => {
   const repo = route.query.repo;
   const pull = route.query.pr;
 
-  if (typeof owner !== "string" || typeof repo !== "string" || typeof pull !== "string") {
+  if (
+    typeof owner !== "string" ||
+    typeof repo !== "string" ||
+    typeof pull !== "string"
+  ) {
     return null;
   }
 
@@ -278,7 +380,7 @@ const context = computed<PullRequestContext | null>(() => {
   return {
     owner,
     repo,
-    pullNumber
+    pullNumber,
   };
 });
 
@@ -291,14 +393,18 @@ const contextLabel = computed(() => {
 });
 
 const state = computed(() => buildReviewPageState(parsedFiles.value));
-const filteredCommentsTree = computed(() => getFilteredCommentTree(commentsTree.value, commentFilterMode.value));
+const filteredCommentsTree = computed(() =>
+  getFilteredCommentTree(commentsTree.value, commentFilterMode.value)
+);
 
 const activeFileHunks = computed(() => {
   if (!selectedFilePath.value) {
     return [];
   }
 
-  const file = state.value.visibleFiles.find((item) => item.newPath === selectedFilePath.value);
+  const file = state.value.visibleFiles.find(
+    (item) => item.newPath === selectedFilePath.value
+  );
   if (!file) {
     return [];
   }
@@ -309,8 +415,11 @@ const activeFileHunks = computed(() => {
 const progress = computed(() =>
   buildFileTreeProgress(
     store.hunks
-      .filter((hunk): hunk is { patchId: string; isViewed: boolean; filePath: string } =>
-        typeof hunk.filePath === "string"
+      .filter(
+        (
+          hunk
+        ): hunk is { patchId: string; isViewed: boolean; filePath: string } =>
+          typeof hunk.filePath === "string"
       )
       .map((hunk) => ({ filePath: hunk.filePath, isViewed: hunk.isViewed }))
   )
@@ -326,7 +435,7 @@ const inlineCommentDraft = computed(() => {
   return {
     line: inlineCommentLine.value,
     startLine: inlineCommentStartLine.value ?? undefined,
-    anchorId: inlineCommentAnchorId.value ?? undefined
+    anchorId: inlineCommentAnchorId.value ?? undefined,
   };
 });
 const inlineCommentRangeLabel = computed(() => {
@@ -339,7 +448,10 @@ const inlineCommentRangeLabel = computed(() => {
     return `line ${inlineCommentLine.value}`;
   }
 
-  return `lines ${Math.min(start, inlineCommentLine.value)}-${Math.max(start, inlineCommentLine.value)}`;
+  return `lines ${Math.min(start, inlineCommentLine.value)}-${Math.max(
+    start,
+    inlineCommentLine.value
+  )}`;
 });
 
 function getActiveStoreHunk() {
@@ -386,7 +498,7 @@ async function persistViewedStateForActiveHunk() {
     pullNumber: context.value.pullNumber,
     filePath: active.filePath,
     patchId: active.patchId,
-    isViewed: active.isViewed
+    isViewed: active.isViewed,
   });
 }
 
@@ -431,7 +543,7 @@ async function loadReview() {
       loaded.hunks.map((hunk) => ({
         patchId: hunk.patchId,
         isViewed: hunk.isViewed,
-        filePath: hunk.filePath
+        filePath: hunk.filePath,
       }))
     );
 
@@ -440,27 +552,34 @@ async function loadReview() {
       expandAncestors(selectedFilePath.value);
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "Failed to load review data";
+    errorMessage.value =
+      error instanceof Error ? error.message : "Failed to load review data";
   } finally {
     isLoading.value = false;
   }
 }
 
-function startInlineComment(payload: { lineNumber: number; startLine?: number; anchorId?: string }) {
-  const isRangeUpdate =
-    inlineCommentLine.value !== null &&
-    inlineCommentAnchorId.value !== null &&
-    payload.anchorId !== undefined &&
-    payload.startLine !== undefined;
-
-  inlineCommentLine.value = payload.lineNumber;
-  inlineCommentStartLine.value = payload.startLine ?? payload.lineNumber;
-  inlineCommentAnchorId.value = payload.anchorId ?? null;
-
-  if (!isRangeUpdate) {
+function startInlineComment(payload: {
+  lineNumber: number;
+  startLine?: number;
+  anchorId?: string;
+  action?: "start" | "end";
+}) {
+  if (payload.action === "start") {
+    inlineCommentStartLine.value = payload.lineNumber;
+    inlineCommentLine.value = payload.lineNumber;
+    inlineCommentAnchorId.value = null;
     inlineCommentBody.value = "";
-    inlineCommentStatus.value = "";
+    inlineCommentStatus.value = `Range start selected at line ${payload.lineNumber}. Click Comment on end line.`;
+    return;
   }
+
+  const startLine =
+    inlineCommentStartLine.value ?? payload.startLine ?? payload.lineNumber;
+  inlineCommentStartLine.value = startLine;
+  inlineCommentLine.value = payload.lineNumber;
+  inlineCommentAnchorId.value = payload.anchorId ?? null;
+  inlineCommentStatus.value = "";
 }
 
 function cancelInlineComment() {
@@ -468,6 +587,28 @@ function cancelInlineComment() {
   inlineCommentStartLine.value = null;
   inlineCommentAnchorId.value = null;
   inlineCommentBody.value = "";
+}
+
+function insertSuggestionTemplate() {
+  const start = inlineCommentStartLine.value ?? inlineCommentLine.value;
+  const end = inlineCommentLine.value;
+  const rangeLabel =
+    typeof start === "number" && typeof end === "number"
+      ? `${Math.min(start, end)}-${Math.max(start, end)}`
+      : "line-range";
+
+  const suggestion = [
+    "```suggestion",
+    `// suggested change for lines ${rangeLabel}`,
+    "```",
+  ].join("\n");
+
+  if (!inlineCommentBody.value.trim()) {
+    inlineCommentBody.value = suggestion;
+    return;
+  }
+
+  inlineCommentBody.value = `${inlineCommentBody.value.trim()}\n\n${suggestion}`;
 }
 
 function addInlineCommentToReview() {
@@ -488,14 +629,19 @@ function addInlineCommentToReview() {
     path: selectedFilePath.value,
     startLine: inlineCommentStartLine.value ?? undefined,
     line: inlineCommentLine.value,
-    body
+    body,
   });
 
   inlineCommentStatus.value = "Comment added to pending review.";
   cancelInlineComment();
 }
 
-function removePendingInlineComment(path: string, startLine: number | undefined, line: number, body: string) {
+function removePendingInlineComment(
+  path: string,
+  startLine: number | undefined,
+  line: number,
+  body: string
+) {
   const index = pendingInlineComments.value.findIndex(
     (comment) =>
       comment.path === path &&
@@ -513,7 +659,8 @@ async function submitInlineCommentForLine() {
   inlineCommentStatus.value = "";
 
   if (!context.value || !authStore.token) {
-    inlineCommentStatus.value = "Cannot submit inline comment without context and auth token.";
+    inlineCommentStatus.value =
+      "Cannot submit inline comment without context and auth token.";
     return;
   }
 
@@ -536,7 +683,7 @@ async function submitInlineCommentForLine() {
         path: selectedFilePath.value,
         startLine: inlineCommentStartLine.value ?? undefined,
         line: inlineCommentLine.value,
-        body
+        body,
       },
       githubFetch
     );
@@ -545,15 +692,19 @@ async function submitInlineCommentForLine() {
     cancelInlineComment();
     await loadReview();
   } catch (error) {
-    inlineCommentStatus.value = error instanceof Error ? error.message : "Inline comment submit failed";
+    inlineCommentStatus.value =
+      error instanceof Error ? error.message : "Inline comment submit failed";
   }
 }
 
-async function sendReviewDecision(event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT") {
+async function sendReviewDecision(
+  event: "APPROVE" | "REQUEST_CHANGES" | "COMMENT"
+) {
   reviewStatusMessage.value = "";
 
   if (!context.value || !authStore.token) {
-    reviewStatusMessage.value = "Cannot submit review without context and auth token.";
+    reviewStatusMessage.value =
+      "Cannot submit review without context and auth token.";
     return;
   }
 
@@ -564,7 +715,7 @@ async function sendReviewDecision(event: "APPROVE" | "REQUEST_CHANGES" | "COMMEN
         ...context.value,
         event,
         body: reviewMessage.value.trim() || undefined,
-        comments: pendingInlineComments.value
+        comments: pendingInlineComments.value,
       },
       githubFetch
     );
@@ -574,7 +725,8 @@ async function sendReviewDecision(event: "APPROVE" | "REQUEST_CHANGES" | "COMMEN
     reviewMessage.value = "";
     await loadReview();
   } catch (error) {
-    reviewStatusMessage.value = error instanceof Error ? error.message : "Review submit failed";
+    reviewStatusMessage.value =
+      error instanceof Error ? error.message : "Review submit failed";
   }
 }
 

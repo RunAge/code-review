@@ -1,14 +1,21 @@
 import { detectCommentAuthorType } from "../comments/botDetection";
-import { filterComments, type CommentFilterMode } from "../comments/commentFilters";
+import {
+  filterComments,
+  type CommentFilterMode,
+} from "../comments/commentFilters";
 import { mapCommentsToFileTree } from "../comments/commentMapper";
 import {
   fetchIssueComments,
   fetchPullRequestComments,
   fetchResolvedThreadMap,
   submitPullRequestInlineComment,
-  submitPullRequestReview
+  submitPullRequestReview,
 } from "../comments/githubCommentsApi";
-import { listViewedPatchIds, markHunkViewed, unmarkHunkViewed } from "../db/reviewDb";
+import {
+  listViewedPatchIds,
+  markHunkViewed,
+  unmarkHunkViewed,
+} from "../db/reviewDb";
 import { assembleReviewData } from "./reviewAssembler";
 import type { ParsedFileFromWorker } from "./parseDiffInWorker";
 import { fetchPullRequestDiff } from "./pullRequestDiffApi";
@@ -26,10 +33,14 @@ export interface ReviewCommentView {
   line: number;
   body: string;
   authorType: "human" | "bot";
+  authorLogin: string;
   isResolved: boolean;
 }
 
-export type ReviewCommentTree = Record<string, Record<number, ReviewCommentView[]>>;
+export type ReviewCommentTree = Record<
+  string,
+  Record<number, ReviewCommentView[]>
+>;
 
 export async function loadPullRequestReviewData(
   context: PullRequestContext,
@@ -46,16 +57,25 @@ export async function loadPullRequestReviewData(
 
   const [inlineCommentsRaw] = await Promise.all([
     fetchPullRequestComments(context, fetchImpl),
-    fetchIssueComments({ ...context, issueNumber: context.pullNumber }, fetchImpl)
+    fetchIssueComments(
+      { ...context, issueNumber: context.pullNumber },
+      fetchImpl
+    ),
   ]);
 
   const threadResolvedMap = await fetchResolvedThreadMap(context, fetchImpl);
 
   const inlineComments = (inlineCommentsRaw as Array<Record<string, unknown>>)
-    .filter((comment) => typeof comment.path === "string" && typeof comment.line === "number")
+    .filter(
+      (comment) =>
+        typeof comment.path === "string" && typeof comment.line === "number"
+    )
     .map((comment) => {
       const id = Number(comment.id ?? 0);
-      const author = (comment.user ?? { login: "unknown", type: "User" }) as { login: string; type: string };
+      const author = (comment.user ?? { login: "unknown", type: "User" }) as {
+        login: string;
+        type: string;
+      };
       const nodeId = String(comment.node_id ?? id);
 
       return {
@@ -64,7 +84,8 @@ export async function loadPullRequestReviewData(
         line: Number(comment.line),
         body: String(comment.body ?? ""),
         authorType: detectCommentAuthorType(author),
-        isResolved: threadResolvedMap.get(nodeId) ?? false
+        authorLogin: author.login,
+        isResolved: threadResolvedMap.get(nodeId) ?? false,
       } satisfies ReviewCommentView;
     });
 
@@ -73,7 +94,7 @@ export async function loadPullRequestReviewData(
   return {
     files,
     hunks: assembled.hunks,
-    commentsTree
+    commentsTree,
   };
 }
 
@@ -115,7 +136,7 @@ export async function persistHunkViewedState(input: {
     await markHunkViewed({
       prId: input.pullNumber,
       filePath: input.filePath,
-      patchId: input.patchId
+      patchId: input.patchId,
     });
     return;
   }
@@ -143,7 +164,7 @@ export async function submitReviewDecision(
       pullNumber: input.pullNumber,
       event: input.event,
       body: input.body,
-      comments: input.comments
+      comments: input.comments,
     },
     fetchImpl
   );
@@ -166,7 +187,7 @@ export async function submitInlineComment(
       path: input.path,
       startLine: input.startLine,
       line: input.line,
-      body: input.body
+      body: input.body,
     },
     fetchImpl
   );

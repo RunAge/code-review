@@ -1,8 +1,6 @@
 import {
   defineComponent,
   h,
-  onBeforeUnmount,
-  onMounted,
   type PropType,
 } from "vue";
 
@@ -23,6 +21,7 @@ type InlineComment = {
   id: number;
   body: string;
   authorType: "human" | "bot";
+  authorLogin: string;
   isResolved: boolean;
 };
 
@@ -35,6 +34,7 @@ export default defineComponent({
       lineNumber: number;
       startLine?: number;
       anchorId?: string;
+      action?: "start" | "end";
     }) => typeof payload?.lineNumber === "number",
   },
   props: {
@@ -67,73 +67,6 @@ export default defineComponent({
     },
   },
   setup(props, { emit }) {
-    let isSelectingRange = false;
-    let dragStartLine: number | null = null;
-
-    function emitRangeForPoint(clientX: number, clientY: number) {
-      if (typeof document === "undefined") {
-        return;
-      }
-
-      const target = document.elementFromPoint(
-        clientX,
-        clientY
-      ) as HTMLElement | null;
-      const lineElement = target?.closest(
-        "[data-line-number]"
-      ) as HTMLElement | null;
-      if (!lineElement) {
-        return;
-      }
-
-      const lineAttr = lineElement.getAttribute("data-line-number");
-      if (!lineAttr) {
-        return;
-      }
-
-      const lineNumber = Number.parseInt(lineAttr, 10);
-      if (!Number.isFinite(lineNumber)) {
-        return;
-      }
-
-      emit("comment-line", {
-        lineNumber,
-        startLine: dragStartLine ?? lineNumber,
-        anchorId: lineElement.getAttribute("data-anchor-id") ?? undefined,
-      });
-    }
-
-    function handleWindowMouseMove(event: MouseEvent) {
-      if (!isSelectingRange) {
-        return;
-      }
-
-      emitRangeForPoint(event.clientX, event.clientY);
-    }
-
-    function handleWindowMouseUp() {
-      isSelectingRange = false;
-      dragStartLine = null;
-    }
-
-    onMounted(() => {
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      window.addEventListener("mousemove", handleWindowMouseMove);
-      window.addEventListener("mouseup", handleWindowMouseUp);
-    });
-
-    onBeforeUnmount(() => {
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      window.removeEventListener("mousemove", handleWindowMouseMove);
-      window.removeEventListener("mouseup", handleWindowMouseUp);
-    });
-
     function lineClass(type: DiffLine["type"]): string {
       if (type === "added") {
         return "border-l-2 border-moss/60 bg-moss/15 text-moss";
@@ -154,6 +87,86 @@ export default defineComponent({
       const comments =
         props.commentsTree[props.filePath]?.[line.newLineNumber] ?? [];
 
+      function renderLinkedBody(body: string) {
+        const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const lines = body.split("\n");
+
+        return lines.flatMap((lineText, lineIndex) => {
+          const nodes: ReturnType<typeof h>[] = [];
+          let cursor = 0;
+
+          for (const match of lineText.matchAll(markdownLinkRegex)) {
+            const start = match.index ?? 0;
+            const end = start + match[0].length;
+
+            if (start > cursor) {
+              const plainChunk = lineText.slice(cursor, start);
+              nodes.push(...plainChunk.split(urlRegex).map((chunk, idx) => {
+                if (/^https?:\/\//.test(chunk)) {
+                  return h(
+                    "a",
+                    {
+                      key: `auto-${lineIndex}-${start}-${idx}`,
+                      href: chunk,
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "text-tide underline decoration-tide/50 hover:text-flare"
+                    },
+                    chunk
+                  );
+                }
+
+                return h("span", { key: `plain-${lineIndex}-${start}-${idx}` }, chunk);
+              }));
+            }
+
+            nodes.push(
+              h(
+                "a",
+                {
+                  key: `md-${lineIndex}-${start}`,
+                  href: match[2],
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  class: "text-tide underline decoration-tide/50 hover:text-flare"
+                },
+                match[1]
+              )
+            );
+
+            cursor = end;
+          }
+
+          if (cursor < lineText.length || lineText.length === 0) {
+            const trailing = lineText.slice(cursor);
+            nodes.push(...trailing.split(urlRegex).map((chunk, idx) => {
+              if (/^https?:\/\//.test(chunk)) {
+                return h(
+                  "a",
+                  {
+                    key: `trail-link-${lineIndex}-${idx}`,
+                    href: chunk,
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    class: "text-tide underline decoration-tide/50 hover:text-flare"
+                  },
+                  chunk
+                );
+              }
+
+              return h("span", { key: `trail-text-${lineIndex}-${idx}` }, chunk);
+            }));
+          }
+
+          if (lineIndex < lines.length - 1) {
+            nodes.push(h("br", { key: `br-${lineIndex}` }));
+          }
+
+          return nodes;
+        });
+      }
+
       return comments.map((comment) =>
         h(
           "div",
@@ -168,7 +181,7 @@ export default defineComponent({
               {
                 class: "font-semibold uppercase tracking-[0.12em] text-ink/55",
               },
-              `${comment.authorType}${
+              `${comment.authorLogin} · ${comment.authorType}${
                 comment.isResolved ? " · resolved" : " · unresolved"
               }`
             ),
@@ -178,7 +191,7 @@ export default defineComponent({
                 class:
                   "mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/85",
               },
-              comment.body
+              renderLinkedBody(comment.body)
             ),
           ]
         )
@@ -218,8 +231,6 @@ export default defineComponent({
       const anchorId = `inline-anchor-${lineKey}`;
       const canComment = typeof line.newLineNumber === "number";
       const lineNumber = canComment ? (line.newLineNumber as number) : null;
-      const isRangeMode =
-        typeof props.inlineCommentDraft?.startLine === "number";
 
       let inDraftRange = false;
       if (lineNumber !== null && props.inlineCommentDraft) {
@@ -234,53 +245,33 @@ export default defineComponent({
         "div",
         { class: "group mb-1 flex items-start gap-2", key: lineKey },
         [
+          canComment
+            ? h(
+                "button",
+                {
+                  class:
+                    "mt-1 hidden h-6 w-6 shrink-0 items-center justify-center rounded border border-ink/30 bg-[#313244] text-xs font-bold text-ink/80 transition hover:border-tide hover:text-tide group-hover:inline-flex",
+                  type: "button",
+                  title: "Select range start",
+                  onClick: () =>
+                    emit("comment-line", {
+                      lineNumber: line.newLineNumber as number,
+                      startLine: line.newLineNumber as number,
+                      anchorId,
+                      action: "start",
+                    }),
+                },
+                "+"
+              )
+            : h("span", { class: "inline-block w-6 shrink-0" }),
           h(
             "pre",
             {
-              class: `min-w-0 flex-1 overflow-x-auto rounded-md px-3 py-1.5 font-mono text-[12px] leading-relaxed ${lineClass(
+              class: `min-w-0 flex-1 whitespace-pre-wrap break-words rounded-md px-3 py-1.5 font-mono text-[12px] leading-relaxed ${lineClass(
                 line.type
               )} ${inDraftRange ? "ring-1 ring-flare/60" : ""}`,
               "data-line-number": lineNumber ?? undefined,
               "data-anchor-id": anchorId,
-              onMouseDown: canComment
-                ? (event: MouseEvent) => {
-                    event.preventDefault();
-
-                    isSelectingRange = true;
-                    dragStartLine = lineNumber as number;
-
-                    if (
-                      event.shiftKey &&
-                      props.inlineCommentDraft &&
-                      typeof props.inlineCommentDraft.line === "number"
-                    ) {
-                      emit("comment-line", {
-                        lineNumber: lineNumber as number,
-                        startLine: props.inlineCommentDraft.line,
-                        anchorId,
-                      });
-                      return;
-                    }
-
-                    emit("comment-line", {
-                      lineNumber: lineNumber as number,
-                      anchorId,
-                    });
-                  }
-                : undefined,
-              onMouseEnter: canComment
-                ? (event: MouseEvent) => {
-                    if (
-                      !isSelectingRange ||
-                      !props.inlineCommentDraft ||
-                      !isRangeMode
-                    ) {
-                      return;
-                    }
-
-                    emitRangeForPoint(event.clientX, event.clientY);
-                  }
-                : undefined,
             },
             line.content
           ),
@@ -294,11 +285,15 @@ export default defineComponent({
                   onClick: () =>
                     emit("comment-line", {
                       lineNumber: line.newLineNumber as number,
-                      startLine: line.newLineNumber as number,
+                      startLine:
+                        props.inlineCommentDraft?.startLine ??
+                        props.inlineCommentDraft?.line ??
+                        (line.newLineNumber as number),
                       anchorId,
+                      action: "end",
                     }),
                 },
-                "+ Comment"
+                "Comment"
               )
             : null,
         ]

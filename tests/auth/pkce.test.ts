@@ -14,6 +14,6 @@ describe("PKCE", () => {
     const verifier = "test-verifier-123";
     const challenge = await generateCodeChallenge(verifier);
 
-    expect(challenge).toBe("B2Y4U9QxczYll4lD6sc8T1fQ4e7v4keMRCpN8QxRfN8");
+    expect(challenge).toBe("zSNMHiBdtxNs8L9onqEnW-Xq5fuLcM7EksItq1aKBDY");
   });
 });

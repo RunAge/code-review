@@ -4,7 +4,7 @@ import { clearToken, getToken, setToken } from "../../src/utils/storage/tokenSto
 
 describe("tokenStorage", () => {
   beforeEach(() => {
-    localStorage.clear();
+    clearToken();
   });
 
   it("stores and reads token", () => {

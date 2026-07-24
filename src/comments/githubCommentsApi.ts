@@ -37,6 +37,43 @@ interface InlineCommentSubmitInput extends RepoRef {
 
 interface GitHubApiErrorPayload {
   message?: string;
+  errors?: Array<{
+    resource?: string;
+    field?: string;
+    code?: string;
+    message?: string;
+  }>;
+}
+
+async function parseGitHubApiError(
+  response: Response
+): Promise<GitHubApiErrorPayload | null> {
+  try {
+    return (await response.clone().json()) as GitHubApiErrorPayload;
+  } catch {
+    return null;
+  }
+}
+
+function formatSubmissionError(status: number, payload: GitHubApiErrorPayload | null) {
+  const message = payload?.message;
+  return `GitHub review submission failed with status ${status}${message ? `: ${message}` : ""}`;
+}
+
+function shouldFallbackToCommentThenDecision(payload: GitHubApiErrorPayload | null) {
+  const topLevelMessage = payload?.message?.toLowerCase() ?? "";
+  const mentionsInvalidComment =
+    topLevelMessage.includes("review comments is invalid") ||
+    topLevelMessage.includes("comment") && topLevelMessage.includes("invalid");
+  const hasCommentValidationError =
+    payload?.errors?.some(
+      (error) =>
+        error.resource === "PullRequestReviewComment" ||
+        error.field === "comments" ||
+        error.message?.toLowerCase().includes("comment")
+    ) ?? false;
+
+  return mentionsInvalidComment || hasCommentValidationError;
 }
 
 async function parseJson<T>(response: Response): Promise<T> {
@@ -191,12 +228,16 @@ export async function submitPullRequestReview(
     return;
   }
 
+  const primaryErrorPayload = await parseGitHubApiError(primaryResponse);
+
   // GitHub may reject decision events with inline comments in a single request.
-  // Fallback: submit comments as COMMENT review, then submit decision only.
+  // Fallback only for comment-validation failures: submit comments as COMMENT
+  // review, then submit decision-only review.
   if (
     primaryResponse.status === 422 &&
     input.event !== "COMMENT" &&
-    comments.length > 0
+    comments.length > 0 &&
+    shouldFallbackToCommentThenDecision(primaryErrorPayload)
   ) {
     const commentResponse = await createReview({
       event: "COMMENT",
@@ -204,8 +245,9 @@ export async function submitPullRequestReview(
     });
 
     if (!commentResponse.ok) {
+      const commentErrorPayload = await parseGitHubApiError(commentResponse);
       throw new Error(
-        `GitHub review submission failed with status ${commentResponse.status}`
+        formatSubmissionError(commentResponse.status, commentErrorPayload)
       );
     }
 
@@ -218,24 +260,13 @@ export async function submitPullRequestReview(
       return;
     }
 
+    const decisionErrorPayload = await parseGitHubApiError(decisionResponse);
     throw new Error(
-      `GitHub review submission failed with status ${decisionResponse.status}`
+      formatSubmissionError(decisionResponse.status, decisionErrorPayload)
     );
   }
 
-  let extraMessage = "";
-  try {
-    const payload = (await primaryResponse.json()) as GitHubApiErrorPayload;
-    if (payload.message) {
-      extraMessage = `: ${payload.message}`;
-    }
-  } catch {
-    // Ignore parse errors; keep generic status message.
-  }
-
-  throw new Error(
-    `GitHub review submission failed with status ${primaryResponse.status}${extraMessage}`
-  );
+  throw new Error(formatSubmissionError(primaryResponse.status, primaryErrorPayload));
 }
 
 export async function submitPullRequestInlineComment(

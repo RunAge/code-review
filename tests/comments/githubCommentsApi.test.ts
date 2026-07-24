@@ -125,7 +125,7 @@ describe("github comments api", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: "Validation Failed" }), {
+        new Response(JSON.stringify({ message: "Review comments is invalid" }), {
           status: 422,
           headers: { "Content-Type": "application/json" },
         })
@@ -145,17 +145,23 @@ describe("github comments api", () => {
             path: "src/a.ts",
             startLine: 10,
             line: 12,
-            body: "nit"
-          }
-        ]
+            body: "nit",
+          },
+        ],
       },
       fetchMock as unknown as typeof fetch
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    const firstPayload = JSON.parse(String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body));
-    const secondPayload = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body));
-    const thirdPayload = JSON.parse(String((fetchMock.mock.calls[2] as [string, RequestInit])[1].body));
+    const firstPayload = JSON.parse(
+      String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body)
+    );
+    const secondPayload = JSON.parse(
+      String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body)
+    );
+    const thirdPayload = JSON.parse(
+      String((fetchMock.mock.calls[2] as [string, RequestInit])[1].body)
+    );
 
     expect(firstPayload.event).toBe("REQUEST_CHANGES");
     expect(firstPayload.comments).toHaveLength(1);
@@ -163,6 +169,84 @@ describe("github comments api", () => {
     expect(secondPayload.comments).toHaveLength(1);
     expect(thirdPayload.event).toBe("REQUEST_CHANGES");
     expect(thirdPayload.comments).toBeUndefined();
+  });
+
+  it("does not fallback for non-comment 422 errors", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: "Can not approve your own pull request" }),
+        {
+          status: 422,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    );
+
+    await expect(
+      submitPullRequestReview(
+        {
+          owner: "acme",
+          repo: "tool",
+          pullNumber: 12,
+          event: "APPROVE",
+          comments: [
+            {
+              path: "src/a.ts",
+              line: 12,
+              body: "nit",
+            },
+          ],
+        },
+        fetchMock as unknown as typeof fetch
+      )
+    ).rejects.toThrow(
+      "GitHub review submission failed with status 422: Can not approve your own pull request"
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("includes API message when fallback decision request fails", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Review comments is invalid" }), {
+          status: 422,
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ message: "Can not approve your own pull request" }),
+          {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      );
+
+    await expect(
+      submitPullRequestReview(
+        {
+          owner: "acme",
+          repo: "tool",
+          pullNumber: 12,
+          event: "APPROVE",
+          body: "Looks good",
+          comments: [
+            {
+              path: "src/a.ts",
+              line: 12,
+              body: "nit",
+            },
+          ],
+        },
+        fetchMock as unknown as typeof fetch
+      )
+    ).rejects.toThrow(
+      "GitHub review submission failed with status 422: Can not approve your own pull request"
+    );
   });
 
   it("includes API message in submission error when available", async () => {
@@ -180,10 +264,12 @@ describe("github comments api", () => {
           repo: "tool",
           pullNumber: 12,
           event: "COMMENT",
-          body: "Test"
+          body: "Test",
         },
         fetchMock as unknown as typeof fetch
       )
-    ).rejects.toThrow("GitHub review submission failed with status 422: Review comments is invalid");
+    ).rejects.toThrow(
+      "GitHub review submission failed with status 422: Review comments is invalid"
+    );
   });
 });

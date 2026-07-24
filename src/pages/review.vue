@@ -162,7 +162,8 @@
               Add inline comment · {{ inlineCommentRangeLabel }}
             </p>
             <p class="mt-1 text-[11px] text-ink/60">
-              Click + on a line to set range start, then click Comment on target end line.
+              Click + on a line to set range start, then click Comment on target
+              end line.
             </p>
             <textarea
               v-model="inlineCommentBody"

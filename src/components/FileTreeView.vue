@@ -13,7 +13,9 @@
             {{ expanded.has(node.id) ? "-" : "+" }}
           </span>
           <span class="truncate">{{ node.name }}</span>
-          <span class="ml-auto text-[10px] text-ink/55">{{ node.reviewed }}/{{ node.total }}</span>
+          <span class="ml-auto text-[10px] text-ink/55"
+            >{{ node.reviewed }}/{{ node.total }}</span
+          >
         </button>
 
         <FileTreeView

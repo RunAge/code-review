@@ -1,8 +1,4 @@
-import {
-  defineComponent,
-  h,
-  type PropType,
-} from "vue";
+import { defineComponent, h, type PropType } from "vue";
 
 interface DiffLine {
   type: "added" | "removed" | "context";
@@ -102,23 +98,30 @@ export default defineComponent({
 
             if (start > cursor) {
               const plainChunk = lineText.slice(cursor, start);
-              nodes.push(...plainChunk.split(urlRegex).map((chunk, idx) => {
-                if (/^https?:\/\//.test(chunk)) {
+              nodes.push(
+                ...plainChunk.split(urlRegex).map((chunk, idx) => {
+                  if (/^https?:\/\//.test(chunk)) {
+                    return h(
+                      "a",
+                      {
+                        key: `auto-${lineIndex}-${start}-${idx}`,
+                        href: chunk,
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class:
+                          "text-tide underline decoration-tide/50 hover:text-flare",
+                      },
+                      chunk
+                    );
+                  }
+
                   return h(
-                    "a",
-                    {
-                      key: `auto-${lineIndex}-${start}-${idx}`,
-                      href: chunk,
-                      target: "_blank",
-                      rel: "noopener noreferrer",
-                      class: "text-tide underline decoration-tide/50 hover:text-flare"
-                    },
+                    "span",
+                    { key: `plain-${lineIndex}-${start}-${idx}` },
                     chunk
                   );
-                }
-
-                return h("span", { key: `plain-${lineIndex}-${start}-${idx}` }, chunk);
-              }));
+                })
+              );
             }
 
             nodes.push(
@@ -129,7 +132,8 @@ export default defineComponent({
                   href: match[2],
                   target: "_blank",
                   rel: "noopener noreferrer",
-                  class: "text-tide underline decoration-tide/50 hover:text-flare"
+                  class:
+                    "text-tide underline decoration-tide/50 hover:text-flare",
                 },
                 match[1]
               )
@@ -140,23 +144,30 @@ export default defineComponent({
 
           if (cursor < lineText.length || lineText.length === 0) {
             const trailing = lineText.slice(cursor);
-            nodes.push(...trailing.split(urlRegex).map((chunk, idx) => {
-              if (/^https?:\/\//.test(chunk)) {
+            nodes.push(
+              ...trailing.split(urlRegex).map((chunk, idx) => {
+                if (/^https?:\/\//.test(chunk)) {
+                  return h(
+                    "a",
+                    {
+                      key: `trail-link-${lineIndex}-${idx}`,
+                      href: chunk,
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class:
+                        "text-tide underline decoration-tide/50 hover:text-flare",
+                    },
+                    chunk
+                  );
+                }
+
                 return h(
-                  "a",
-                  {
-                    key: `trail-link-${lineIndex}-${idx}`,
-                    href: chunk,
-                    target: "_blank",
-                    rel: "noopener noreferrer",
-                    class: "text-tide underline decoration-tide/50 hover:text-flare"
-                  },
+                  "span",
+                  { key: `trail-text-${lineIndex}-${idx}` },
                   chunk
                 );
-              }
-
-              return h("span", { key: `trail-text-${lineIndex}-${idx}` }, chunk);
-            }));
+              })
+            );
           }
 
           if (lineIndex < lines.length - 1) {

@@ -55,25 +55,24 @@ async function parseGitHubApiError(
   }
 }
 
-function formatSubmissionError(status: number, payload: GitHubApiErrorPayload | null) {
+function formatSubmissionError(
+  status: number,
+  payload: GitHubApiErrorPayload | null
+) {
   const message = payload?.message;
-  return `GitHub review submission failed with status ${status}${message ? `: ${message}` : ""}`;
-}
-
-function shouldFallbackToCommentThenDecision(payload: GitHubApiErrorPayload | null) {
-  const topLevelMessage = payload?.message?.toLowerCase() ?? "";
-  const mentionsInvalidComment =
-    topLevelMessage.includes("review comments is invalid") ||
-    topLevelMessage.includes("comment") && topLevelMessage.includes("invalid");
-  const hasCommentValidationError =
-    payload?.errors?.some(
-      (error) =>
-        error.resource === "PullRequestReviewComment" ||
-        error.field === "comments" ||
-        error.message?.toLowerCase().includes("comment")
-    ) ?? false;
-
-  return mentionsInvalidComment || hasCommentValidationError;
+  const detail =
+    payload?.errors
+      ?.map(
+        (error) =>
+          error.message ??
+          [error.resource, error.field, error.code].filter(Boolean).join(".")
+      )
+      .filter((value): value is string => Boolean(value))
+      .join("; ") ?? "";
+  const suffix = [message, detail].filter(Boolean).join(" | ");
+  return `GitHub review submission failed with status ${status}${
+    suffix ? `: ${suffix}` : ""
+  }`;
 }
 
 async function parseJson<T>(response: Response): Promise<T> {
@@ -221,7 +220,7 @@ export async function submitPullRequestReview(
   const primaryResponse = await createReview({
     event: input.event,
     body: input.body,
-    comments,
+    comments: comments.length > 0 ? comments : undefined,
   });
 
   if (primaryResponse.ok) {
@@ -231,13 +230,11 @@ export async function submitPullRequestReview(
   const primaryErrorPayload = await parseGitHubApiError(primaryResponse);
 
   // GitHub may reject decision events with inline comments in a single request.
-  // Fallback only for comment-validation failures: submit comments as COMMENT
-  // review, then submit decision-only review.
+  // Fallback: submit comments as COMMENT review, then submit decision-only review.
   if (
     primaryResponse.status === 422 &&
     input.event !== "COMMENT" &&
-    comments.length > 0 &&
-    shouldFallbackToCommentThenDecision(primaryErrorPayload)
+    comments.length > 0
   ) {
     const commentResponse = await createReview({
       event: "COMMENT",
@@ -266,7 +263,9 @@ export async function submitPullRequestReview(
     );
   }
 
-  throw new Error(formatSubmissionError(primaryResponse.status, primaryErrorPayload));
+  throw new Error(
+    formatSubmissionError(primaryResponse.status, primaryErrorPayload)
+  );
 }
 
 export async function submitPullRequestInlineComment(

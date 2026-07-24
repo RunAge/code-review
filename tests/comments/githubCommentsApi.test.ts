@@ -85,8 +85,14 @@ describe("github comments api", () => {
     );
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const payload = JSON.parse(String(init.body)) as {
+      event: string;
+      comments?: unknown[];
+    };
     expect(url).toContain("/pulls/12/reviews");
     expect(init.method).toBe("POST");
+    expect(payload.event).toBe("APPROVE");
+    expect(payload.comments).toBeUndefined();
   });
 
   it("throws when pull request comments endpoint returns non-OK status", async () => {
@@ -125,10 +131,13 @@ describe("github comments api", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: "Review comments is invalid" }), {
-          status: 422,
-          headers: { "Content-Type": "application/json" },
-        })
+        new Response(
+          JSON.stringify({ message: "Review comments is invalid" }),
+          {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
       )
       .mockResolvedValueOnce(new Response(null, { status: 200 }))
       .mockResolvedValueOnce(new Response(null, { status: 200 }));
@@ -171,49 +180,49 @@ describe("github comments api", () => {
     expect(thirdPayload.comments).toBeUndefined();
   });
 
-  it("does not fallback for non-comment 422 errors", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({ message: "Can not approve your own pull request" }),
-        {
+  it("falls back on generic 422 when inline comments are present", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Unprocessable Entity" }), {
           status: 422,
           headers: { "Content-Type": "application/json" },
-        }
+        })
       )
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    await submitPullRequestReview(
+      {
+        owner: "acme",
+        repo: "tool",
+        pullNumber: 12,
+        event: "APPROVE",
+        comments: [
+          {
+            path: "src/a.ts",
+            line: 12,
+            body: "nit",
+          },
+        ],
+      },
+      fetchMock as unknown as typeof fetch
     );
 
-    await expect(
-      submitPullRequestReview(
-        {
-          owner: "acme",
-          repo: "tool",
-          pullNumber: 12,
-          event: "APPROVE",
-          comments: [
-            {
-              path: "src/a.ts",
-              line: 12,
-              body: "nit",
-            },
-          ],
-        },
-        fetchMock as unknown as typeof fetch
-      )
-    ).rejects.toThrow(
-      "GitHub review submission failed with status 422: Can not approve your own pull request"
-    );
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("includes API message when fallback decision request fails", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: "Review comments is invalid" }), {
-          status: 422,
-          headers: { "Content-Type": "application/json" },
-        })
+        new Response(
+          JSON.stringify({ message: "Review comments is invalid" }),
+          {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
       )
       .mockResolvedValueOnce(new Response(null, { status: 200 }))
       .mockResolvedValueOnce(
